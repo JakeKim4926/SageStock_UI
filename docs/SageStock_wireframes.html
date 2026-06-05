@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SageStock — 와이어프레임 키트</title>
+<style>
+:root{
+  --bg:#FFFFFF; --surf:#F4F5F7; --surf2:#ECEEF1; --line:#E4E7EC; --line2:#CDD2DA;
+  --txt:#1B1E23; --txt2:#6A7280; --txt3:#9AA1AC; --brand:#2B2F36;
+  --up:#E0392B; --down:#1565C0; --chip:#EEF0F3; --grn:#2E9E5B; --amb:#C77700;
+  --page:#E9EBEF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;background:var(--page);color:var(--txt);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:40px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:24px;font-weight:700;margin:48px 0 8px;letter-spacing:-.01em}
+h3{font-size:15px;font-weight:700;color:var(--txt2)}
+.sub{font-size:16px;color:var(--txt2);margin-top:6px}
+.muted{font-size:13px;color:var(--txt3);margin-top:4px}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;background:var(--chip);color:var(--txt2)}
+.tag.up{background:#E0392B22;color:var(--up)} .tag.down{background:#1565C022;color:var(--down)}
+.tag.g{background:#2E9E5B1e;color:var(--grn)} .tag.a{background:#C7770020;color:var(--amb)} .tag.b{background:#2B2F3614;color:var(--brand)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+/* info blocks */
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;margin-top:16px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:780px){.cols{grid-template-columns:1fr}}
+.ia{font-size:13.5px;color:var(--txt)}
+.ia ul{list-style:none;margin:4px 0 4px 14px;border-left:1.5px solid var(--line)}
+.ia li{padding:3px 0 3px 14px;position:relative}
+.ia li:before{content:"";position:absolute;left:-1px;top:15px;width:10px;height:1.5px;background:var(--line)}
+.ia b{font-weight:700}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.flow .step{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600}
+.flow .arr{color:var(--txt3);font-weight:700}
+.navrow{display:flex;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px}
+.navrow .nt{flex:1;text-align:center;padding:14px 6px;font-size:13px;font-weight:600;border-right:1px solid var(--line)}
+.navrow .nt:last-child{border-right:0}
+.navrow .nt small{display:block;font-size:11px;color:var(--txt3);font-weight:500;margin-top:3px}
+
+/* phone grid */
+.grid{display:flex;flex-wrap:wrap;gap:40px;margin-top:24px;align-items:flex-start}
+.cell{width:340px}
+.cap{font-size:14px;font-weight:700;margin-bottom:4px}
+.cap span{color:var(--txt3);font-weight:500}
+.cmp{font-size:11.5px;color:var(--txt3);margin:8px 2px 0;line-height:1.6}
+.cmp b{color:var(--txt2)}
+.phone{width:340px;height:720px;background:var(--bg);border:1px solid var(--line2);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 6px 24px rgba(20,24,33,.08)}
+.scroll{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:11px;font-weight:700}
+.sb .r{color:var(--txt2);font-weight:600;display:flex;gap:6px}
+.hd{padding:10px 16px;border-bottom:1px solid var(--line)}
+.hd .t{font-size:18px;font-weight:700} .hd .s{font-size:11px;color:var(--txt3)}
+.bar{padding:14px 16px 12px}
+.s14{font-size:14px;font-weight:700}.s12{font-size:12px}.s11{font-size:11px;color:var(--txt3)}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sh .t{font-size:15px;font-weight:700} .sh .m{font-size:11px;color:var(--txt3);font-weight:600}
+.seg{display:flex;background:var(--surf2);border-radius:10px;padding:3px;gap:3px;margin-bottom:10px}
+.seg div{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--txt2);padding:7px 0;border-radius:8px}
+.seg div.on{background:#fff;border:1px solid var(--line);color:var(--txt);font-weight:700}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.card.p{padding:14px}
+.srow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.srow .nm{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.srow .tk{font-size:11px;color:var(--txt3)}
+.srow .pr{margin-left:auto;text-align:right}
+.srow .pr .p1{font-size:14px;font-weight:700}
+.srow .pr .p2{font-size:12px;font-weight:600}
+.up{color:var(--up)}.down{color:var(--down)}
+.spark{width:54px;height:24px;border-radius:4px;border:1px solid}
+.spark.u{background:#E0392B12;border-color:#E0392B55}.spark.d{background:#1565C012;border-color:#1565C055}
+.minichip{font-size:10px;font-weight:600;color:var(--txt3);background:var(--chip);border-radius:8px;padding:2px 6px}
+.hscroll{display:flex;gap:10px;overflow:hidden}
+.sig{min-width:170px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px}
+.sig .ti{font-size:14px;font-weight:700;margin:7px 0 4px}
+.sig .ds{font-size:11px;color:var(--txt2);line-height:1.5}
+.field{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px;font-size:13px;color:var(--txt3)}
+.lbl{font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:6px}
+.btn{background:var(--brand);color:#fff;border-radius:12px;text-align:center;padding:14px;font-size:14px;font-weight:700}
+.btn.out{background:#fff;color:var(--brand);border:1px solid var(--line2)}
+.btn.up{background:var(--up)}.btn.down{background:var(--down)}
+.nav{display:flex;border-top:1px solid var(--line);padding:8px 0 12px;background:#fff}
+.nav div{flex:1;text-align:center;font-size:10px;color:var(--txt3)}
+.nav div .ic{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line2);margin:0 auto 5px}
+.nav div.on{color:var(--brand);font-weight:700}
+.nav div.on .ic{background:var(--brand);border:0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs div{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--txt3);padding:11px 0}
+.tabs div.on{color:var(--txt);font-weight:700;box-shadow:inset 0 -2px 0 var(--brand)}
+.kv{display:flex;flex-wrap:wrap}
+.kv .i{width:50%;padding:8px 0}
+.kv .k{font-size:11px;color:var(--txt3)} .kv .v{font-size:13px;font-weight:700}
+.candle{width:100%;height:150px;background:linear-gradient(180deg,#fafbfc,#f4f5f7);border:1px solid var(--line);border-radius:10px;position:relative;overflow:hidden}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 28px;gap:10px}
+.empty .ec{width:54px;height:54px;border-radius:16px;background:var(--surf2);border:1px solid var(--line)}
+.empty .et{font-size:15px;font-weight:700} .empty .es{font-size:12px;color:var(--txt3);line-height:1.6}
+.toggle{width:40px;height:24px;border-radius:20px;background:var(--line2);position:relative}
+.toggle.on{background:var(--brand)} .toggle i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+.toggle.on i{left:19px}
+.setrow{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:0} .setrow .l .t{font-size:14px;font-weight:600}.setrow .l .s{font-size:11px;color:var(--txt3)}
+.setrow .r{margin-left:auto;font-size:13px;color:var(--txt3);font-weight:600}
+.grp{font-size:12px;font-weight:700;color:var(--txt3);margin:14px 0 6px}
+.bandbar{height:6px;border-radius:4px;background:var(--surf2);overflow:hidden}
+.bandbar i{display:block;height:100%;background:var(--brand)}
+.markmini{display:flex;gap:4px;font-size:10px;color:var(--txt3);margin-top:6px}
+.markmini b{color:var(--up)} .markmini u{color:var(--down);text-decoration:none}
+.footer{margin-top:60px;color:var(--txt3);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>SageStock</h1>
+<div class="sub">개인용 한국·미국 주식 분석 앱 — 와이어프레임 키트</div>
+<div class="muted">Android · Galaxy S25 Ultra (412 × 915dp 기준) · 세로형 · 라이트 테마(화이트/실버/그레이) 기본 · 다크 테마 옵션 · 회원가입 없음(단일 사용자)</div>
+<div class="legend">
+  <span class="tag up">상승 ▲ 빨강 (KR 기본)</span>
+  <span class="tag down">하락 ▼ 파랑 (KR 기본)</span>
+  <span class="tag b">색상 규칙 설정에서 전환 가능</span>
+  <span class="tag">Kotlin / Jetpack Compose 권장</span>
+</div>
+
+<!-- ============ IA ============ -->
+<h2>1. 전체 앱 화면 구조도 (IA)</h2>
+<div class="panel cols">
+  <div class="ia">
+    <b>스플래시</b> · 자동 로그인 판정
+    <ul>
+      <li><b>로그인</b> (탭 없음)</li>
+      <li><b>① 홈 / 대시보드</b> <span style="color:var(--txt3)">[탭1]</span>
+        <ul><li>관심종목 요약 · 장 상태</li><li>오늘의 시그널</li><li>상승률/거래량/AI 후보</li></ul>
+      </li>
+      <li><b>② 종목 검색</b> <span style="color:var(--txt3)">[탭2]</span>
+        <ul><li>최근 검색 · 결과 리스트 → 종목 상세</li></ul>
+      </li>
+    </ul>
+  </div>
+  <div class="ia">
+    <ul style="border:0;margin-left:0">
+      <li style="padding-left:0"><b>종목 상세</b> (탭 내부 스택 / 검색·홈에서 진입)
+        <ul>
+          <li>요약(현재가·OHLC·상태배지)</li>
+          <li>차트 / 지표 탭</li>
+          <li>시그널 탭</li>
+          <li>가상매매 탭 → 매수/매도 입력</li>
+        </ul>
+      </li>
+      <li><b>③ 매매 시그널</b> <span style="color:var(--txt3)">[탭3]</span> · 전체 종목 시그널 피드</li>
+      <li><b>④ 가상매매</b> <span style="color:var(--txt3)">[탭4]</span> · 포트폴리오 · 히스토리</li>
+      <li><b>⑤ 설정</b> <span style="color:var(--txt3)">[탭5]</span> · AI 예측은 홈/탭 확장 슬롯</li>
+      <li><b>AI 예측</b> · 홈 카드 + 전용 화면(준비중/데이터부족 빈상태)</li>
+    </ul>
+  </div>
+</div>
+
+<h3 style="margin-top:24px">하단 탭 네비게이션 (5탭)</h3>
+<div class="navrow">
+  <div class="nt">홈<small>대시보드</small></div>
+  <div class="nt">검색<small>종목 검색</small></div>
+  <div class="nt">시그널<small>매매 신호 피드</small></div>
+  <div class="nt">가상매매<small>포트폴리오</small></div>
+  <div class="nt">설정<small>환경·데이터</small></div>
+</div>
+<div class="muted">AI 예측은 모델 미연결 단계라 별도 탭 대신 홈·시그널 영역의 확장 슬롯으로 배치(연결 후 탭 승격 가능). 종목 상세는 모든 탭에서 push되는 공용 스택.</div>
+
+<!-- ============ FLOWS ============ -->
+<h2>2. 주요 사용자 플로우</h2>
+<div class="panel" style="display:flex;flex-direction:column;gap:14px">
+  <div><h3>분석 플로우</h3><div class="flow" style="margin-top:8px"><span class="step">홈/검색</span><span class="arr">→</span><span class="step">종목 상세</span><span class="arr">→</span><span class="step">차트·지표 ON/OFF</span><span class="arr">→</span><span class="step">시그널 탭 해석</span><span class="arr">→</span><span class="step">관심종목 추가</span></div></div>
+  <div><h3>가상매매 플로우</h3><div class="flow" style="margin-top:8px"><span class="step">종목 상세</span><span class="arr">→</span><span class="step">가상매매 탭</span><span class="arr">→</span><span class="step">매수/매도 입력</span><span class="arr">→</span><span class="step">기록 저장</span><span class="arr">→</span><span class="step">포트폴리오 성과</span></div></div>
+  <div><h3>로그인/세션 플로우</h3><div class="flow" style="margin-top:8px"><span class="step">스플래시</span><span class="arr">→</span><span class="step">자동로그인?</span><span class="arr">→ Yes</span><span class="step">홈</span><span class="arr">/ No →</span><span class="step">로그인</span><span class="arr">→ 실패시</span><span class="step">인라인 에러</span><span class="arr">·</span><span class="step">설정>로그아웃 → 로그인</span></div></div>
+  <div><h3>AI 예측 플로우 (확장)</h3><div class="flow" style="margin-top:8px"><span class="step">홈 AI 후보</span><span class="arr">→</span><span class="step">AI 예측 화면</span><span class="arr">→ 모델 OK</span><span class="step">추천 리스트·확률·근거</span><span class="arr">/ 미연결 →</span><span class="step">빈 상태(준비중·데이터부족)</span></div></div>
+</div>
+
+<!-- ============ SCREENS ============ -->
+<h2>3. 화면별 와이어프레임 (9 + 빈상태)</h2>
+<div class="grid">
+
+<!-- 1 LOGIN -->
+<div class="cell">
+  <div class="cap">01 · 로그인 <span>(탭 없음)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="scroll">
+      <div style="text-align:center;padding:48px 24px 16px">
+        <div style="width:60px;height:60px;border-radius:18px;background:var(--brand);margin:0 auto 12px"></div>
+        <div style="font-size:24px;font-weight:700">SageStock</div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:4px">로그인하여 분석을 시작하세요</div>
+      </div>
+      <div style="padding:8px 22px 22px;display:flex;flex-direction:column;gap:13px">
+        <div><div class="lbl">아이디</div><div class="field">아이디 입력</div></div>
+        <div><div class="lbl">비밀번호</div><div class="field">비밀번호 입력</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div style="width:18px;height:18px;border-radius:5px;background:var(--brand)"></div><span style="font-size:12px;color:var(--txt2);font-weight:600">자동 로그인</span></div>
+        <div style="background:#E0392B14;color:var(--up);font-size:12px;font-weight:600;padding:10px 12px;border-radius:10px">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+        <div class="btn">로그인</div>
+        <div style="font-size:12px;color:var(--txt3)">비밀번호를 잊으셨나요?  관리자에게 문의</div>
+      </div>
+    </div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 로고, 아이디/비밀번호 입력 필드, 자동로그인 체크, 인라인 에러 배너, Primary 버튼, 헬프 링크<br><b>상태:</b> 기본 / 포커스 / 실패(에러) / 로딩(버튼 스피너) / 자동로그인 성공시 화면 스킵</div>
+</div>
+
+<!-- 2 HOME -->
+<div class="cell">
+  <div class="cap">02 · 홈 / 대시보드 <span>[탭1]</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd" style="display:flex;align-items:center"><div><div class="t">SageStock</div><div class="s">2026.06.05 (금)</div></div><div style="margin-left:auto;width:32px;height:32px;border-radius:10px;background:var(--surf);border:1px solid var(--line)"></div></div>
+    <div class="bar" style="display:flex;gap:6px;border-bottom:1px solid var(--line)">
+      <span class="tag g"><span class="dot" style="background:var(--grn)"></span>KR 장중</span>
+      <span class="tag a"><span class="dot" style="background:var(--amb)"></span>US 프리마켓</span>
+      <span class="tag">15분 지연</span>
+    </div>
+    <div class="scroll">
+      <div class="sec">
+        <div class="sh"><div class="t">관심종목</div><div class="m">더보기 ›</div></div>
+        <div class="seg"><div class="on">전체</div><div>한국</div><div>미국</div></div>
+        <div class="card">
+          <div class="srow"><div><div class="nm">삼성전자 <span class="minichip">KR</span></div><div class="tk">005930</div></div><div class="spark u"></div><div class="pr"><div class="p1">78,400</div><div class="p2 up">+1.82%</div></div></div>
+          <div class="srow"><div><div class="nm">NVIDIA <span class="minichip">US</span></div><div class="tk">NVDA</div></div><div class="spark d"></div><div class="pr"><div class="p1">$1,204.5</div><div class="p2 down">-0.94%</div></div></div>
+          <div class="srow"><div><div class="nm">에코프로비엠 <span class="minichip">KR</span></div><div class="tk">247540</div></div><div class="spark u"></div><div class="pr"><div class="p1">189,200</div><div class="p2 up">+3.41%</div></div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sh"><div class="t">오늘의 주요 시그널</div><div class="m">더보기 ›</div></div>
+        <div class="hscroll">
+          <div class="sig"><span class="tag up">골든크로스</span><div class="ti">에코프로비엠</div><div class="ds">20·60일선 상향 돌파 — 단기 상승 모멘텀</div></div>
+          <div class="sig"><span class="tag down">데드크로스</span><div class="ti">NVIDIA</div><div class="ds">5·20일선 하향 — 단기 조정 주의</div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="seg"><div class="on">상승률 상위</div><div>거래량 상위</div><div>AI 후보</div></div>
+        <div class="card">
+          <div class="srow"><div><div class="nm">한미반도체 <span class="minichip">KR</span></div><div class="tk">042700</div></div><div class="pr"><div class="p1">142,900</div><div class="p2 up">+2.88%</div></div></div>
+          <div class="srow"><div><div class="nm">Tesla <span class="minichip">US</span></div><div class="tk">TSLA</div></div><div class="pr"><div class="p1">$248.3</div><div class="p2 up">+2.10%</div></div></div>
+        </div>
+        <div style="margin-top:8px"><span class="tag b">AI 후보 미리보기</span> <span style="font-size:11px;color:var(--txt3)">모델 연결 시 활성화</span></div>
+      </div>
+    </div>
+    <div class="nav"><div class="on"><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 장상태 배지(장중·프리/애프터마켓·장마감·지연), 시장 세그먼트(전체/한국/미국), 종목 행(스파크라인·등락), 시그널 가로 카드, 상위 탭, AI 슬롯<br><b>상태:</b> 로딩(스켈레톤) / 관심종목 없음(빈상태) / 장마감(회색 배지) / 지연데이터 배너</div>
+</div>
+
+<!-- 3 SEARCH -->
+<div class="cell">
+  <div class="cap">03 · 종목 검색 <span>[탭2]</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="bar" style="border-bottom:1px solid var(--line)">
+      <div class="field" style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border:1.5px solid var(--txt3);border-radius:50%"></span>종목명 · 티커 검색</div>
+      <div class="seg" style="margin-top:10px"><div class="on">전체</div><div>한국</div><div>미국</div></div>
+    </div>
+    <div class="scroll">
+      <div class="sec">
+        <div class="sh"><div class="t">최근 검색</div><div class="m">전체 삭제</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag">삼성전자 ✕</span><span class="tag">AAPL ✕</span><span class="tag">TSLA ✕</span><span class="tag">에코프로 ✕</span></div>
+      </div>
+      <div class="sec" style="flex:1">
+        <div class="sh"><div class="t">검색 결과</div><div class="m">12건</div></div>
+        <div class="card">
+          <div class="srow"><div><div class="nm">삼성전자 <span class="minichip">KR · KOSPI</span></div><div class="tk">005930</div></div><div class="pr"><div style="width:26px;height:26px;border:1.5px solid var(--line2);border-radius:8px;color:var(--txt3);text-align:center;line-height:24px;font-size:16px;font-weight:700">＋</div></div></div>
+          <div class="srow"><div><div class="nm">삼성SDI <span class="minichip">KR · KOSPI</span></div><div class="tk">006400</div></div><div class="pr"><div style="width:26px;height:26px;border:1.5px solid var(--line2);border-radius:8px;color:var(--txt3);text-align:center;line-height:24px;font-size:16px;font-weight:700">＋</div></div></div>
+          <div class="srow"><div><div class="nm">Apple <span class="minichip">US · NASDAQ</span></div><div class="tk">AAPL</div></div><div class="pr"><div style="width:26px;height:26px;background:var(--brand);border-radius:8px;color:#fff;text-align:center;line-height:26px;font-size:14px;font-weight:700">✓</div></div></div>
+        </div>
+        <div class="cmp" style="margin-top:8px">행 탭 → 종목 상세 / ＋ → 관심종목 추가(✓ 토글)</div>
+      </div>
+    </div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div class="on"><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 검색 입력, 시장 필터 세그먼트, 최근검색 칩(개별/전체 삭제), 결과 행(종목명·티커·시장·＋버튼)<br><b>상태:</b> 빈 입력(최근검색만) / 결과 없음 / 로딩 / 디바운스 자동완성</div>
+</div>
+
+<!-- 4 DETAIL -->
+<div class="cell">
+  <div class="cap">04 · 종목 상세 <span>(공용 스택)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd" style="display:flex;align-items:center;gap:8px"><span style="color:var(--txt3)">‹</span><div><div class="t" style="font-size:16px">삼성전자 <span class="minichip">KR</span></div><div class="s">005930 · KOSPI</div></div><div style="margin-left:auto" class="tag a"><span class="dot" style="background:var(--amb)"></span>15분 지연</div></div>
+    <div class="bar" style="border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:flex-end;gap:10px"><div style="font-size:26px;font-weight:700">78,400</div><div class="up" style="font-weight:700;font-size:14px;padding-bottom:4px">▲ 1,400 (+1.82%)</div></div>
+      <div class="kv" style="margin-top:8px">
+        <div class="i"><div class="k">거래량</div><div class="v">12.4M</div></div>
+        <div class="i"><div class="k">시가</div><div class="v">77,200</div></div>
+        <div class="i"><div class="k">고가</div><div class="v up">78,900</div></div>
+        <div class="i"><div class="k">저가</div><div class="v down">76,800</div></div>
+      </div>
+    </div>
+    <div class="tabs"><div class="on">차트</div><div>지표</div><div>시그널</div><div>가상매매</div></div>
+    <div class="scroll"><div class="sec" style="flex:1">
+      <div class="candle"><svg width="100%" height="150" viewBox="0 0 300 150" preserveAspectRatio="none"><polyline points="0,110 40,95 80,100 120,70 160,80 200,55 240,60 300,40" fill="none" stroke="#1565C0" stroke-width="1.5" opacity=".5"/><g stroke="#E0392B" stroke-width="6">
+        <line x1="30" y1="60" x2="30" y2="110"/><line x1="70" y1="70" x2="70" y2="120"/></g><g stroke="#1565C0" stroke-width="6"><line x1="110" y1="50" x2="110" y2="95"/></g><g stroke="#E0392B" stroke-width="6"><line x1="150" y1="40" x2="150" y2="80"/><line x1="190" y1="35" x2="190" y2="70"/><line x1="230" y1="30" x2="230" y2="65"/><line x1="270" y1="25" x2="270" y2="55"/></g></svg></div>
+      <div class="markmini">마커: <b>▲ 골든크로스</b> · <u>▼ 데드크로스</u> · ◇ 다이버전스</div>
+      <div style="display:flex;gap:6px;margin-top:12px;font-size:11px">
+        <span class="tag b">1D</span><span class="tag">5D</span><span class="tag">1M</span><span class="tag">3M</span><span class="tag">1Y</span><span class="tag">전체</span>
+      </div>
+      <div class="cmp" style="margin-top:10px">바로 아래로 스크롤하면 보조지표 패널 → 차트/지표 화면(05)과 동일 컴포넌트 사용</div>
+    </div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 뒤로가기, 종목 헤더+시장칩+지연/실시간 배지, 가격 블록(등락·OHLC·거래량), 4 내부 탭(차트/지표/시그널/가상매매), 캔들+마커, 기간 칩, 관심추가★<br><b>상태:</b> 실시간/지연/장마감 배지 분기 · 데이터 로딩 · KR(원)·US($) 통화 포맷 자동</div>
+</div>
+
+<!-- 5 CHART -->
+<div class="cell">
+  <div class="cap">05 · 차트 / 지표 <span>(상세 내부 + 전체화면)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd" style="display:flex;align-items:center;gap:8px"><span style="color:var(--txt3)">‹</span><div class="t" style="font-size:16px">삼성전자 · 차트</div><div style="margin-left:auto" class="tag b">⚙ 지표설정</div></div>
+    <div class="scroll">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--line)">
+        <div style="display:flex;gap:6px;font-size:11px;margin-bottom:8px"><span class="tag">1D</span><span class="tag">5D</span><span class="tag b">3M</span><span class="tag">6M</span><span class="tag">1Y</span><span class="tag">3Y</span></div>
+        <div class="seg"><div class="on">일봉</div><div>주봉</div><div>월봉</div></div>
+        <div class="candle" style="height:130px;margin-top:4px"><svg width="100%" height="130" viewBox="0 0 300 130" preserveAspectRatio="none"><polyline points="0,90 60,70 120,80 180,50 240,55 300,35" fill="none" stroke="#C77700" stroke-width="1.5"/><polyline points="0,100 60,85 120,82 180,60 240,58 300,48" fill="none" stroke="#2E9E5B" stroke-width="1.5"/><g stroke="#E0392B" stroke-width="5"><line x1="40" y1="55" x2="40" y2="95"/><line x1="120" y1="50" x2="120" y2="85"/><line x1="220" y1="35" x2="220" y2="70"/></g><g stroke="#1565C0" stroke-width="5"><line x1="80" y1="60" x2="80" y2="90"/><line x1="180" y1="45" x2="180" y2="75"/></g></svg></div>
+      </div>
+      <div class="sec">
+        <div class="sh"><div class="t">보조지표</div><div class="m">ON/OFF</div></div>
+        <div class="setrow"><div class="l"><div class="t">EMA 5·20·60·120</div><div class="s">이동평균 (기본값)</div></div><div class="toggle on"><i></i></div></div>
+        <div class="setrow"><div class="l"><div class="t">볼린저밴드</div><div class="s">20, 2σ</div></div><div class="toggle on"><i></i></div></div>
+        <div class="setrow"><div class="l"><div class="t">RSI</div><div class="s">14 · 70/30</div></div><div class="toggle on"><i></i></div></div>
+        <div class="setrow"><div class="l"><div class="t">스토캐스틱</div><div class="s">14,3,3</div></div><div class="toggle"><i></i></div></div>
+        <div class="setrow"><div class="l"><div class="t">이격도</div><div class="s">20일 기준</div></div><div class="toggle"><i></i></div></div>
+      </div>
+      <div class="sec"><div class="card p"><div class="s11" style="color:var(--txt2);font-weight:700;margin-bottom:6px">지표 설정 패널 (바텀시트)</div><div class="cmp" style="margin:0">EMA 기간 입력(5/20/60/120), RSI 기간·과매수/과매도선, 볼린저 σ, 스토캐스틱 %K/%D — 사용자 변경 → 설정 기본값 저장</div></div></div>
+    </div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 기간 칩(1D~전체), 봉 세그먼트(일/주/월), 캔들+EMA/밴드 오버레이, RSI/스토캐스틱 서브패널, 지표 ON/OFF 토글, ⚙ 설정 바텀시트<br><b>상태:</b> 가로모드 전체차트(옵션) · 핀치 줌/팬 · 십자선 툴팁 · 데이터 부족 구간</div>
+</div>
+
+<!-- 6 SIGNALS -->
+<div class="cell">
+  <div class="cap">06 · 매매 시그널 <span>[탭3]</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd"><div class="t">매매 시그널</div><div class="s">전체 종목 신호 피드</div></div>
+    <div class="bar" style="border-bottom:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap">
+      <span class="tag b">전체</span><span class="tag up">골든크로스</span><span class="tag down">데드크로스</span><span class="tag">상승 다이버전스</span><span class="tag">하락 다이버전스</span>
+    </div>
+    <div class="scroll"><div class="sec" style="display:flex;flex-direction:column;gap:10px">
+      <div class="card p">
+        <div style="display:flex;align-items:center;gap:6px"><span class="tag up">골든크로스</span><span style="margin-left:auto;font-size:11px;color:var(--txt3)">2026.06.05</span></div>
+        <div style="font-size:15px;font-weight:700;margin-top:8px">에코프로비엠 <span class="minichip">KR</span></div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:2px">기준: EMA 20 / EMA 60 상향 교차</div>
+        <div style="font-size:12px;color:var(--txt);margin-top:6px;background:var(--surf2);border-radius:8px;padding:8px">해석: 단기선이 중기선을 위로 뚫어 상승 추세 전환 가능. 거래량 동반 시 신뢰도↑</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:11px;color:var(--txt3)">위험도</span><div class="bandbar" style="flex:1"><i style="width:35%;background:var(--grn)"></i></div><span style="font-size:11px;font-weight:700;color:var(--grn)">낮음</span></div>
+      </div>
+      <div class="card p">
+        <div style="display:flex;align-items:center;gap:6px"><span class="tag down">하락 다이버전스</span><span style="margin-left:auto;font-size:11px;color:var(--txt3)">2026.06.04</span></div>
+        <div style="font-size:15px;font-weight:700;margin-top:8px">NVIDIA <span class="minichip">US</span></div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:2px">기준: 주가 고점↑ · RSI 고점↓</div>
+        <div style="font-size:12px;color:var(--txt);margin-top:6px;background:var(--surf2);border-radius:8px;padding:8px">해석: 가격은 오르나 모멘텀 약화. 단기 조정 가능성, 분할 대응 권장</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span style="font-size:11px;color:var(--txt3)">위험도</span><div class="bandbar" style="flex:1"><i style="width:80%;background:var(--up)"></i></div><span style="font-size:11px;font-weight:700;color:var(--up)">높음</span></div>
+      </div>
+    </div></div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div class="on"><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 시그널 타입 필터 칩, 시그널 카드(타입·발생일·기준지표·해석문구·위험도 바), 종목 칩 → 상세 차트 마커 점프<br><b>상태:</b> 신규 시그널 NEW 배지 / 빈 피드 / 위험도 색상(낮음 초록·중간 앰버·높음 빨강)</div>
+</div>
+
+<!-- 7 AI -->
+<div class="cell">
+  <div class="cap">07 · AI 예측 <span>(확장 화면)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd" style="display:flex;align-items:center"><div><div class="t">AI 급등주 예측</div><div class="s">베타 · 모델 v0</div></div><span style="margin-left:auto" class="tag a">실험적</span></div>
+    <div class="scroll"><div class="sec" style="display:flex;flex-direction:column;gap:10px">
+      <div class="card p">
+        <div style="display:flex;align-items:center"><div style="font-size:15px;font-weight:700">한미반도체 <span class="minichip">KR</span></div><span style="margin-left:auto" class="tag up">상승확률 72%</span></div>
+        <div style="display:flex;gap:14px;margin-top:10px">
+          <div><div class="k" style="font-size:11px;color:var(--txt3)">예상 상승률</div><div class="up" style="font-weight:700;font-size:16px">+8.5%</div></div>
+          <div><div class="k" style="font-size:11px;color:var(--txt3)">신뢰도</div><div style="font-weight:700;font-size:16px">중상</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--txt2);margin-top:8px"><b style="color:var(--txt2)">근거</b> · 거래량 급증 · 골든크로스 · 외국인 순매수</div>
+        <div style="font-size:11px;color:var(--up);margin-top:4px"><b>리스크</b> · 단기 과열(RSI 74) · 실적 발표 임박</div>
+        <div class="btn out" style="margin-top:10px;padding:10px;font-size:13px">＋ 관심종목 추가</div>
+      </div>
+      <div class="card p" style="opacity:.65">
+        <div style="display:flex;align-items:center"><div style="font-size:15px;font-weight:700">SK하이닉스 <span class="minichip">KR</span></div><span style="margin-left:auto" class="tag">확률 61%</span></div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:8px">근거지표 5종 · 리스크 2종 · 탭하여 상세</div>
+      </div>
+    </div></div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 베타 배지, AI 추천 카드(상승확률·예상상승률·신뢰도·근거지표·리스크요인·＋추가), 리스트 정렬<br><b>상태:</b> 연결됨(데이터) / 준비중 / 데이터부족 / 분석불가 → 아래 빈상태 화면 참조</div>
+</div>
+
+<!-- 7b AI EMPTY -->
+<div class="cell">
+  <div class="cap">07b · AI 예측 — 빈 상태 <span>(준비중/데이터부족)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd"><div class="t">AI 급등주 예측</div><div class="s">베타</div></div>
+    <div class="empty">
+      <div class="ec"></div>
+      <div class="et">AI 모델 준비중</div>
+      <div class="es">아직 예측 모델이 연결되지 않았어요.<br>모델이 연결되면 급등 후보와 근거를<br>여기서 바로 확인할 수 있습니다.</div>
+      <div class="btn out" style="margin-top:8px;padding:10px 18px;font-size:13px">연결 상태 확인</div>
+    </div>
+    <div style="border-top:1px solid var(--line);padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+      <div class="card p" style="padding:10px 12px;display:flex;align-items:center;gap:8px"><span class="tag a">데이터 부족</span><span style="font-size:11px;color:var(--txt3)">학습용 가격 이력이 60일 미만</span></div>
+      <div class="card p" style="padding:10px 12px;display:flex;align-items:center;gap:8px"><span class="tag down">분석 불가</span><span style="font-size:11px;color:var(--txt3)">거래정지·상장폐지 종목</span></div>
+    </div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>빈상태 3종:</b> 준비중(모델 미연결) / 데이터 부족(이력 부족) / 분석 불가(거래정지). 일러스트+안내+액션, 톤은 비난 없이 안내형</div>
+</div>
+
+<!-- 8 PAPER TRADE INPUT -->
+<div class="cell">
+  <div class="cap">08 · 가상매매 입력 <span>(상세 탭/바텀시트)</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd" style="display:flex;align-items:center;gap:8px"><span style="color:var(--txt3)">‹</span><div class="t" style="font-size:16px">삼성전자 · 가상매매</div></div>
+    <div class="bar" style="border-bottom:1px solid var(--line)">
+      <div class="seg"><div class="on" style="color:var(--up);border-color:#E0392B66">매수</div><div>매도</div></div>
+    </div>
+    <div class="scroll"><div class="sec" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--txt2)">현재가</span><b>78,400</b></div>
+      <div><div class="lbl">주문 단가</div><div class="field" style="color:var(--txt);font-weight:700">78,400</div></div>
+      <div><div class="lbl">수량</div><div class="field" style="color:var(--txt);font-weight:700">10 주</div></div>
+      <div style="display:flex;gap:6px"><span class="tag">10%</span><span class="tag">25%</span><span class="tag">50%</span><span class="tag">최대</span></div>
+      <div class="card p" style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--txt2)">주문 금액</span><b>784,000</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--txt2)">가상 예수금</span><b>9,216,000</b></div>
+      </div>
+      <div class="btn up">가상 매수 기록</div>
+      <div class="cmp" style="margin:0">실제 주문 아님 — 로컬/서버에 매매 기록만 저장. 저장 즉시 포트폴리오 반영</div>
+    </div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 매수/매도 세그먼트, 단가·수량 입력, 비율 퀵칩, 주문 요약(금액·예수금), 실행 버튼(매수 빨강/매도 파랑), "가상" 고지<br><b>상태:</b> 잔액 부족 / 보유 없음(매도 비활성) / 입력 검증 에러 / 저장 토스트</div>
+</div>
+
+<!-- 8b PORTFOLIO -->
+<div class="cell">
+  <div class="cap">08b · 가상 포트폴리오 <span>[탭4]</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd"><div class="t">가상매매</div><div class="s">Paper Trading 포트폴리오</div></div>
+    <div class="bar" style="border-bottom:1px solid var(--line)">
+      <div class="card p" style="background:var(--brand);border:0;color:#fff">
+        <div style="font-size:11px;opacity:.8">총 평가금액</div>
+        <div style="font-size:24px;font-weight:700;margin:2px 0">12,480,000</div>
+        <div style="font-size:13px;font-weight:700;color:#ff9a90">+480,000 (+4.00%)</div>
+      </div>
+    </div>
+    <div class="tabs"><div class="on">보유종목</div><div>매매 히스토리</div></div>
+    <div class="scroll"><div class="sec">
+      <div class="card">
+        <div class="srow"><div><div class="nm">삼성전자</div><div class="tk">10주 · 평단 74,000</div></div><div class="pr"><div class="p1">784,000</div><div class="p2 up">+5.9%</div></div></div>
+        <div class="srow"><div><div class="nm">NVIDIA</div><div class="tk">2주 · 평단 $1,250</div></div><div class="pr"><div class="p1">$2,409</div><div class="p2 down">-3.6%</div></div></div>
+        <div class="srow"><div><div class="nm">에코프로비엠</div><div class="tk">3주 · 평단 165,000</div></div><div class="pr"><div class="p1">567,600</div><div class="p2 up">+14.6%</div></div></div>
+      </div>
+      <div class="cmp" style="margin-top:10px">행 → 종목별 평단/수량/평가금액/평가손익/수익률 상세 · 히스토리 탭은 일자별 매수·매도 기록</div>
+    </div></div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div class="on"><div class="ic"></div>가상매매</div><div><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 총평가/총손익 요약카드, 보유/히스토리 탭, 보유종목 행(평단·수량·평가금·손익·수익률), 히스토리 타임라인<br><b>상태:</b> 보유 없음(빈상태+가상매매 안내) / 손익 색상 / KR·US 통화 분리 합산</div>
+</div>
+
+<!-- 9 SETTINGS -->
+<div class="cell">
+  <div class="cap">09 · 설정 <span>[탭5]</span></div>
+  <div class="phone">
+    <div class="sb"><span>9:41</span><span class="r">LTE 100%</span></div>
+    <div class="hd"><div class="t">설정</div><div class="s">앱 환경 · 데이터 · 테마</div></div>
+    <div class="scroll"><div class="sec">
+      <div class="grp">계정</div>
+      <div class="card"><div class="setrow"><div class="l"><div class="t">로그인 정보</div><div class="s">admin</div></div><div class="r">›</div></div><div class="setrow"><div class="l"><div class="t" style="color:var(--up)">로그아웃</div></div><div class="r">›</div></div></div>
+      <div class="grp">데이터</div>
+      <div class="card"><div class="setrow"><div class="l"><div class="t">데이터 소스 상태</div><div class="s">KR·US 정상 · 15분 지연</div></div><div class="r" style="color:var(--grn)">● 정상</div></div><div class="setrow"><div class="l"><div class="t">시장 표시</div><div class="s">한국 + 미국 모두</div></div><div class="r">›</div></div></div>
+      <div class="grp">차트 기본값</div>
+      <div class="card"><div class="setrow"><div class="l"><div class="t">기본 차트 기간</div></div><div class="r">3개월 ›</div></div><div class="setrow"><div class="l"><div class="t">기본 보조지표</div></div><div class="r">EMA·RSI·볼린저 ›</div></div></div>
+      <div class="grp">표시</div>
+      <div class="card"><div class="setrow"><div class="l"><div class="t">테마 (다크모드 우선)</div><div class="s">현재: 라이트</div></div><div class="toggle"><i></i></div></div><div class="setrow"><div class="l"><div class="t">상승/하락 색상</div></div><div class="r">빨강▲/파랑▼ ›</div></div></div>
+      <div style="text-align:center;color:var(--txt3);font-size:11px;margin-top:14px">SageStock v0.1.0</div>
+    </div></div>
+    <div class="nav"><div><div class="ic"></div>홈</div><div><div class="ic"></div>검색</div><div><div class="ic"></div>시그널</div><div><div class="ic"></div>가상매매</div><div class="on"><div class="ic"></div>설정</div></div>
+  </div>
+  <div class="cmp"><b>컴포넌트:</b> 그룹 리스트(계정·데이터·차트·표시), 상태 인디케이터, 토글, 디스클로저 행, 로그아웃(빨강)<br><b>상태:</b> 데이터 소스 정상/지연/오류 · 테마 즉시 전환 · 변경값 차트 기본값에 반영</div>
+</div>
+
+</div><!-- /grid -->
+
+<!-- TOKENS -->
+<h2>4. 디자인 토큰 (핸드오프)</h2>
+<div class="panel">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px">
+    <span class="tag" style="background:#FFFFFF;border:1px solid var(--line)">bg #FFFFFF</span>
+    <span class="tag" style="background:#F4F5F7">surface #F4F5F7</span>
+    <span class="tag" style="background:#ECEEF1">surface-2 #ECEEF1</span>
+    <span class="tag" style="background:#E4E7EC">line #E4E7EC</span>
+    <span class="tag" style="background:#CDD2DA">line-2 #CDD2DA</span>
+    <span class="tag" style="background:#2B2F36;color:#fff">brand #2B2F36</span>
+    <span class="tag up">up #E0392B</span>
+    <span class="tag down">down #1565C0</span>
+    <span class="tag g">positive #2E9E5B</span>
+    <span class="tag a">warning #C77700</span>
+  </div>
+  <div style="font-size:13px;color:var(--txt2);margin-top:14px;line-height:1.8">
+    텍스트: primary #1B1E23 · secondary #6A7280 · tertiary #9AA1AC<br>
+    타이포: 화면제목 20/700 · 섹션 15·16/700 · 본문 13~14/400~600 · 보조 11~12 · 숫자/가격 700 (가독성 우선, 등폭 권장)<br>
+    간격: 화면 좌우 패딩 16~18 · 섹션 14~16 · 카드 패딩 14~16 · 요소 gap 8~12<br>
+    라운드: 카드 14 · 입력/버튼 12 · 칩 20(pill) · 폰 프레임 26<br>
+    프레임: 412 × 915dp(S25 Ultra 논리해상도) · 하단탭 높이 ~64 · 상태바 ~44<br>
+    상승/하락: 기본 빨강▲/파랑▼(한국식), 설정에서 초록/빨강(미국식) 전환. 색 외 ▲▼ 기호 병행(접근성)
+  </div>
+</div>
+
+<div class="footer">SageStock 와이어프레임 키트 · Android(Kotlin/Compose) · 라이트 톤 기준 · Figma 이관용 구조 정리</div>
+
+</div>
+</body>
+</html>
