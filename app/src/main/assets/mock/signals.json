@@ -1,0 +1,52 @@
+[
+  {
+    "id": "sig001",
+    "ticker": "005930",
+    "stockName": "삼성전자",
+    "type": "GOLDEN_CROSS",
+    "date": "2026-05-09",
+    "description": "EMA5이 EMA20을 상향 돌파. 단기 상승 모멘텀 확인.",
+    "riskLevel": "LOW",
+    "candleIndex": 1
+  },
+  {
+    "id": "sig002",
+    "ticker": "005930",
+    "stockName": "삼성전자",
+    "type": "BOLLINGER_BREAKOUT",
+    "date": "2026-05-23",
+    "description": "볼린저 밴드 상단 돌파. 강한 상승 추세 지속 중.",
+    "riskLevel": "MEDIUM",
+    "candleIndex": 3
+  },
+  {
+    "id": "sig003",
+    "ticker": "005930",
+    "stockName": "삼성전자",
+    "type": "RSI_OVERBOUGHT",
+    "date": "2026-06-06",
+    "description": "RSI(14) 63.4 — 과매수 영역 진입. 단기 조정 가능성.",
+    "riskLevel": "MEDIUM",
+    "candleIndex": 5
+  },
+  {
+    "id": "sig004",
+    "ticker": "NVDA",
+    "stockName": "NVIDIA",
+    "type": "DEAD_CROSS",
+    "date": "2026-05-23",
+    "description": "EMA5이 EMA20을 하향 돌파. 단기 하락 모멘텀 주의.",
+    "riskLevel": "HIGH",
+    "candleIndex": 3
+  },
+  {
+    "id": "sig005",
+    "ticker": "NVDA",
+    "stockName": "NVIDIA",
+    "type": "RSI_OVERSOLD",
+    "date": "2026-06-06",
+    "description": "RSI(14) 41.2 — 과매도 근접. RSI 다이버전스 감지, 반등 모니터링.",
+    "riskLevel": "LOW",
+    "candleIndex": 5
+  }
+]

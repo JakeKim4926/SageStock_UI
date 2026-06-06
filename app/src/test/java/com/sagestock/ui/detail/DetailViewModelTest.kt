@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sagestock.domain.Candle
 import com.sagestock.domain.IndicatorSet
-import com.sagestock.domain.Market
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.StockRepository
@@ -19,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -47,8 +47,8 @@ class DetailViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun savedState(ticker: String = "005930") =
-        SavedStateHandle(mapOf("ticker" to ticker))
+    private fun savedState(ticker: String = "005930", index: Int = -1) =
+        SavedStateHandle(mapOf("ticker" to ticker, "index" to index))
 
     @Test
     fun `initial state is Loading`() = runTest {
@@ -121,5 +121,29 @@ class DetailViewModelTest {
             assertTrue(retried.quote is Result.Success)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `toggleEma flips showEma in config`() = runTest {
+        coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
+        coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
+
+        val vm = DetailViewModel(repo, savedState())
+        advanceUntilIdle()
+
+        assertFalse(vm.uiState.value.config.showEma)
+        vm.toggleEma()
+        assertTrue(vm.uiState.value.config.showEma)
+        vm.toggleEma()
+        assertFalse(vm.uiState.value.config.showEma)
+    }
+
+    @Test
+    fun `highlightIndex is read from SavedStateHandle`() = runTest {
+        coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
+        coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
+
+        val vm = DetailViewModel(repo, savedState(index = 3))
+        assertEquals(3, vm.uiState.value.highlightIndex)
     }
 }
