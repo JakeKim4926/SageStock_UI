@@ -1,0 +1,10 @@
+[
+  { "ticker": "005930", "name": "삼성전자", "market": "KR", "exchange": "KOSPI" },
+  { "ticker": "000660", "name": "SK하이닉스", "market": "KR", "exchange": "KOSPI" },
+  { "ticker": "247540", "name": "에코프로비엠", "market": "KR", "exchange": "KOSDAQ" },
+  { "ticker": "042700", "name": "한미반도체", "market": "KR", "exchange": "KOSPI" },
+  { "ticker": "NVDA",   "name": "NVIDIA",     "market": "US", "exchange": "NASDAQ" },
+  { "ticker": "AAPL",   "name": "Apple",      "market": "US", "exchange": "NASDAQ" },
+  { "ticker": "TSLA",   "name": "Tesla",      "market": "US", "exchange": "NASDAQ" },
+  { "ticker": "MSFT",   "name": "Microsoft",  "market": "US", "exchange": "NASDAQ" }
+]
