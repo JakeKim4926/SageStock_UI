@@ -60,6 +60,18 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Pattern-Aware Changes
+
+**Follow existing patterns before creating or modifying code. Verify after changes.**
+
+- Before creating anything new, search for an existing pattern.
+- Before modifying anything, explain the current pattern.
+- Prefer reuse over new structure unless a new pattern is clearly needed.
+- After modifying anything, prove it still builds and tests.
+- If verification cannot be run, state what should be checked manually.
+
+These guidelines are working if:
+- new code follows existing project patterns, and completed changes are backed by build/test verification.
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
