@@ -2,10 +2,15 @@ package com.sagestock.data
 
 import android.content.Context
 import com.sagestock.domain.Candle
+import com.sagestock.domain.CrossMarker
+import com.sagestock.domain.CrossType
 import com.sagestock.domain.IndicatorSet
 import com.sagestock.domain.Market
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
+import com.sagestock.domain.RiskLevel
+import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalType
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,6 +26,7 @@ class MockStockRepository @Inject constructor(
 ) : StockRepository {
 
     private val allStocks: List<Stock> by lazy { loadStocks() }
+    private val allSignals: List<Signal> by lazy { loadSignals() }
 
     override suspend fun search(query: String): Result<List<Stock>> {
         delay(300)
@@ -63,6 +69,11 @@ class MockStockRepository @Inject constructor(
             ?: Result.Error("지표 데이터 없음: $ticker")
     }
 
+    override suspend fun getSignals(): Result<List<Signal>> {
+        delay(150)
+        return Result.Success(allSignals)
+    }
+
     private fun loadStocks(): List<Stock> {
         val json = context.assets.open("mock/stocks.json").bufferedReader().readText()
         val arr = JSONArray(json)
@@ -84,6 +95,16 @@ class MockStockRepository @Inject constructor(
             val o = JSONObject(json)
             val candlesArr = o.getJSONArray("candles")
             val rsiArr = o.getJSONArray("rsiSeries")
+
+            fun doubleList(key: String): List<Double> {
+                if (!o.has(key)) return emptyList()
+                val arr = o.getJSONArray(key)
+                return List(arr.length()) { arr.getDouble(it) }
+            }
+
+            val crossArr = if (o.has("crossMarkers")) o.getJSONArray("crossMarkers") else JSONArray()
+            val divArr = if (o.has("divergenceMarkers")) o.getJSONArray("divergenceMarkers") else JSONArray()
+
             IndicatorSet(
                 ticker = o.getString("ticker"),
                 rsi14 = o.getDouble("rsi14"),
@@ -99,7 +120,45 @@ class MockStockRepository @Inject constructor(
                     )
                 },
                 rsiSeries = List(rsiArr.length()) { i -> rsiArr.getDouble(i) },
+                ema5 = doubleList("ema5"),
+                ema20 = doubleList("ema20"),
+                ema60 = doubleList("ema60"),
+                ema120 = doubleList("ema120"),
+                bollingerUpper = doubleList("bollingerUpper"),
+                bollingerMid = doubleList("bollingerMid"),
+                bollingerLower = doubleList("bollingerLower"),
+                disparitySeries = doubleList("disparitySeries"),
+                stochasticK = doubleList("stochasticK"),
+                stochasticD = doubleList("stochasticD"),
+                crossMarkers = List(crossArr.length()) { i ->
+                    val c = crossArr.getJSONObject(i)
+                    CrossMarker(
+                        index = c.getInt("index"),
+                        type = CrossType.valueOf(c.getString("type")),
+                    )
+                },
+                divergenceMarkers = List(divArr.length()) { i -> divArr.getInt(i) },
             )
         }.getOrNull()
+    }
+
+    private fun loadSignals(): List<Signal> {
+        return runCatching {
+            val json = context.assets.open("mock/signals.json").bufferedReader().readText()
+            val arr = JSONArray(json)
+            List(arr.length()) { i ->
+                val o = arr.getJSONObject(i)
+                Signal(
+                    id = o.getString("id"),
+                    ticker = o.getString("ticker"),
+                    stockName = o.getString("stockName"),
+                    type = SignalType.valueOf(o.getString("type")),
+                    date = o.getString("date"),
+                    description = o.getString("description"),
+                    riskLevel = RiskLevel.valueOf(o.getString("riskLevel")),
+                    candleIndex = if (o.has("candleIndex")) o.getInt("candleIndex") else -1,
+                )
+            }
+        }.getOrElse { emptyList() }
     }
 }

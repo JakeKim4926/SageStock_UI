@@ -30,9 +30,38 @@ data class Candle(
     val volume: Long,
 )
 
+enum class CrossType { GOLDEN, DEAD }
+data class CrossMarker(val index: Int, val type: CrossType)
+
 data class IndicatorSet(
     val ticker: String,
     val rsi14: Double,
     val candles: List<Candle>,
     val rsiSeries: List<Double>,
+    val ema5: List<Double> = emptyList(),
+    val ema20: List<Double> = emptyList(),
+    val ema60: List<Double> = emptyList(),
+    val ema120: List<Double> = emptyList(),
+    val bollingerUpper: List<Double> = emptyList(),
+    val bollingerMid: List<Double> = emptyList(),
+    val bollingerLower: List<Double> = emptyList(),
+    val disparitySeries: List<Double> = emptyList(),
+    val stochasticK: List<Double> = emptyList(),
+    val stochasticD: List<Double> = emptyList(),
+    val crossMarkers: List<CrossMarker> = emptyList(),
+    val divergenceMarkers: List<Int> = emptyList(),
+)
+
+enum class SignalType { GOLDEN_CROSS, DEAD_CROSS, RSI_OVERSOLD, RSI_OVERBOUGHT, BOLLINGER_BREAKOUT }
+enum class RiskLevel { LOW, MEDIUM, HIGH }
+
+data class Signal(
+    val id: String,
+    val ticker: String,
+    val stockName: String,
+    val type: SignalType,
+    val date: String,
+    val description: String,
+    val riskLevel: RiskLevel,
+    val candleIndex: Int = -1,
 )

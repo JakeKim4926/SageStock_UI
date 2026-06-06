@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +44,7 @@ import com.sagestock.ui.theme.SageTypography
 @Composable
 fun SearchScreen(
     onStockClick: (String) -> Unit,
+    onSignalsClick: () -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -49,6 +52,7 @@ fun SearchScreen(
         state = state,
         onQueryChange = viewModel::onQueryChange,
         onStockClick = onStockClick,
+        onSignalsClick = onSignalsClick,
     )
 }
 
@@ -57,6 +61,7 @@ fun SearchContent(
     state: SearchUiState,
     onQueryChange: (String) -> Unit,
     onStockClick: (String) -> Unit,
+    onSignalsClick: () -> Unit = {},
 ) {
     val c = SageTheme.colors
     Column(Modifier.fillMaxSize().background(c.bg)) {
@@ -76,6 +81,12 @@ fun SearchContent(
                     }
                 } else {
                     LazyColumn {
+                        if (state.query.isBlank()) {
+                            item {
+                                SignalsFeedRow(onClick = onSignalsClick)
+                                HorizontalDivider(color = c.line)
+                            }
+                        }
                         items(r.data, key = { it.ticker }) { stock ->
                             StockRow(stock = stock, onClick = { onStockClick(stock.ticker) })
                             HorizontalDivider(color = c.line)
@@ -134,6 +145,26 @@ private fun StockRow(stock: Stock, onClick: () -> Unit) {
             Spacer(Modifier.height(2.dp))
             Text("${stock.ticker} · ${stock.exchange}", style = SageTypography.labelSmall, color = c.textTertiary)
         }
+    }
+}
+
+@Composable
+private fun SignalsFeedRow(onClick: () -> Unit) {
+    val c = SageTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Default.Notifications, contentDescription = null, tint = c.brand, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text("매매 시그널 피드", style = SageTypography.titleSmall, color = c.textPrimary)
+            Text("크로스·RSI·볼린저 신호 모아보기", style = SageTypography.labelSmall, color = c.textTertiary)
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = c.textTertiary)
     }
 }
 
