@@ -19,6 +19,7 @@ data class Quote(
     val low: Double,
     val volume: Long,
     val isDelayed: Boolean = true,
+    val market: Market = Market.KR,
 )
 
 data class Candle(
@@ -52,7 +53,10 @@ data class IndicatorSet(
     val divergenceMarkers: List<Int> = emptyList(),
 )
 
-enum class SignalType { GOLDEN_CROSS, DEAD_CROSS, RSI_OVERSOLD, RSI_OVERBOUGHT, BOLLINGER_BREAKOUT }
+enum class SignalType {
+    GOLDEN_CROSS, DEAD_CROSS, RSI_OVERSOLD, RSI_OVERBOUGHT, BOLLINGER_BREAKOUT,
+    BULLISH_DIVERGENCE, BEARISH_DIVERGENCE,
+}
 enum class RiskLevel { LOW, MEDIUM, HIGH }
 
 data class Signal(
@@ -64,4 +68,16 @@ data class Signal(
     val description: String,
     val riskLevel: RiskLevel,
     val candleIndex: Int = -1,
+)
+
+enum class PredictionStatus { READY, PREPARING, INSUFFICIENT_DATA, UNAVAILABLE }
+
+data class Prediction(
+    val stock: Stock,
+    val status: PredictionStatus,
+    val riseProbability: Double = 0.0,
+    val expectedReturnPercent: Double = 0.0,
+    val confidence: Double = 0.0,
+    val reasons: List<String> = emptyList(),
+    val riskFactors: List<String> = emptyList(),
 )

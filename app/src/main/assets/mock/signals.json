@@ -48,5 +48,25 @@
     "description": "RSI(14) 41.2 — 과매도 근접. RSI 다이버전스 감지, 반등 모니터링.",
     "riskLevel": "LOW",
     "candleIndex": 5
+  },
+  {
+    "id": "sig006",
+    "ticker": "NVDA",
+    "stockName": "NVIDIA",
+    "type": "BEARISH_DIVERGENCE",
+    "date": "2026-06-06",
+    "description": "주가 고점↑ · RSI 고점↓ — 모멘텀 약화. 단기 조정 가능성, 분할 대응 권장.",
+    "riskLevel": "HIGH",
+    "candleIndex": 5
+  },
+  {
+    "id": "sig007",
+    "ticker": "005930",
+    "stockName": "삼성전자",
+    "type": "BULLISH_DIVERGENCE",
+    "date": "2026-06-06",
+    "description": "주가 저점↓ · RSI 저점↑ — 하락 모멘텀 둔화. 반등 시도 가능성.",
+    "riskLevel": "MEDIUM",
+    "candleIndex": 5
   }
 ]

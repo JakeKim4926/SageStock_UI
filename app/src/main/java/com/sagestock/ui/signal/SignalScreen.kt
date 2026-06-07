@@ -27,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sagestock.domain.Result
 import com.sagestock.domain.RiskLevel
 import com.sagestock.domain.Signal
 import com.sagestock.domain.SignalType
@@ -45,11 +46,11 @@ import com.sagestock.ui.theme.SageTypography
 
 @Composable
 fun SignalScreen(
-    onBack: () -> Unit,
     onSignalClick: (Signal) -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: SignalViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     SignalContent(
         state = state,
         onBack = onBack,
@@ -62,22 +63,30 @@ fun SignalScreen(
 @Composable
 fun SignalContent(
     state: SignalUiState,
-    onBack: () -> Unit,
     onSignalClick: (Signal) -> Unit,
     onFilterChange: (SignalType?) -> Unit,
     onRetry: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val c = SageTheme.colors
     Column(Modifier.fillMaxSize().background(c.bg)) {
         // ── 상단 바 ──────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = c.textPrimary)
+        if (onBack != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = c.textPrimary)
+                }
+                Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
             }
-            Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
+        } else {
+            // 탭 모드(와이어프레임 06): 뒤로가기 없이 제목+부제.
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
+                Text("전체 종목 신호 피드", style = SageTypography.labelSmall, color = c.textTertiary)
+            }
         }
         HorizontalDivider(color = c.line)
 
@@ -102,15 +111,15 @@ fun SignalContent(
 
         // ── 바디 ──────────────────────────────────────────
         when {
-            state.signals is com.sagestock.domain.Result.Loading -> {
+            state.signals is Result.Loading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = c.brand)
                 }
             }
-            state.signals is com.sagestock.domain.Result.Error -> {
+            state.signals is Result.Error -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text((state.signals as com.sagestock.domain.Result.Error).message, color = c.textSecondary, style = SageTypography.bodyMedium)
+                        Text((state.signals as Result.Error).message, color = c.textSecondary, style = SageTypography.bodyMedium)
                         Spacer(Modifier.height(12.dp))
                         Button(onClick = onRetry) { Text("다시 시도") }
                     }
@@ -122,9 +131,10 @@ fun SignalContent(
                 }
             }
             else -> {
+                val latestDate = state.filtered.maxOfOrNull { it.date }
                 LazyColumn {
                     items(state.filtered, key = { it.id }) { signal ->
-                        SignalCard(signal = signal, onClick = { onSignalClick(signal) })
+                        SignalCard(signal = signal, isNew = signal.date == latestDate, onClick = { onSignalClick(signal) })
                         HorizontalDivider(color = c.line)
                     }
                 }
@@ -146,22 +156,23 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             label,
             style = SageTypography.labelSmall,
-            color = if (selected) Color.White else c.textSecondary,
+            color = if (selected) c.onBrand else c.textSecondary,
         )
     }
 }
 
 @Composable
-private fun SignalCard(signal: Signal, onClick: () -> Unit) {
+private fun SignalCard(signal: Signal, isNew: Boolean, onClick: () -> Unit) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // 헤더: 종목 + 날짜
+        // 헤더: 종목 + (NEW) + 날짜
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -178,6 +189,17 @@ private fun SignalCard(signal: Signal, onClick: () -> Unit) {
                         .background(c.surface2)
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
+                if (isNew) {
+                    Text(
+                        "NEW",
+                        style = SageTypography.labelSmall,
+                        color = c.onBrand,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SageTheme.price.up)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
             Text(signal.date, style = SageTypography.labelSmall, color = c.textTertiary)
         }
@@ -223,20 +245,24 @@ private fun RiskBar(riskLevel: RiskLevel) {
 // ── 헬퍼 확장 ──────────────────────────────────────────────────────────────
 
 private fun SignalType.displayName() = when (this) {
-    SignalType.GOLDEN_CROSS       -> "골든크로스"
-    SignalType.DEAD_CROSS         -> "데드크로스"
-    SignalType.RSI_OVERSOLD       -> "RSI 과매도"
-    SignalType.RSI_OVERBOUGHT     -> "RSI 과매수"
-    SignalType.BOLLINGER_BREAKOUT -> "볼린저 돌파"
+    SignalType.GOLDEN_CROSS        -> "골든크로스"
+    SignalType.DEAD_CROSS          -> "데드크로스"
+    SignalType.RSI_OVERSOLD        -> "RSI 과매도"
+    SignalType.RSI_OVERBOUGHT      -> "RSI 과매수"
+    SignalType.BOLLINGER_BREAKOUT  -> "볼린저 돌파"
+    SignalType.BULLISH_DIVERGENCE  -> "상승 다이버전스"
+    SignalType.BEARISH_DIVERGENCE  -> "하락 다이버전스"
 }
 
 @Composable
 private fun SignalType.chipColor(c: com.sagestock.ui.theme.SageStockColors): Color = when (this) {
-    SignalType.GOLDEN_CROSS       -> c.up
-    SignalType.DEAD_CROSS         -> c.down
-    SignalType.RSI_OVERSOLD       -> c.positive
-    SignalType.RSI_OVERBOUGHT     -> c.warning
-    SignalType.BOLLINGER_BREAKOUT -> c.brand
+    SignalType.GOLDEN_CROSS        -> SageTheme.price.up
+    SignalType.DEAD_CROSS          -> SageTheme.price.down
+    SignalType.RSI_OVERSOLD        -> c.positive
+    SignalType.RSI_OVERBOUGHT      -> c.warning
+    SignalType.BOLLINGER_BREAKOUT  -> c.brand
+    SignalType.BULLISH_DIVERGENCE  -> SageTheme.price.up
+    SignalType.BEARISH_DIVERGENCE  -> SageTheme.price.down
 }
 
 private fun RiskLevel.displayName() = when (this) {
@@ -267,7 +293,7 @@ private val sampleSignals = listOf(
 @Composable
 private fun PreviewSignals() = SageStockTheme {
     SignalContent(
-        state = SignalUiState(signals = com.sagestock.domain.Result.Success(sampleSignals), filter = null),
+        state = SignalUiState(signals = Result.Success(sampleSignals), filter = null),
         onBack = {},
         onSignalClick = {},
         onFilterChange = {},
@@ -279,7 +305,7 @@ private fun PreviewSignals() = SageStockTheme {
 @Composable
 private fun PreviewLoading() = SageStockTheme {
     SignalContent(
-        state = SignalUiState(signals = com.sagestock.domain.Result.Loading),
+        state = SignalUiState(signals = Result.Loading),
         onBack = {},
         onSignalClick = {},
         onFilterChange = {},

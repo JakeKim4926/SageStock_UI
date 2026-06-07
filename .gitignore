@@ -35,3 +35,6 @@ google-services.json
 
 # Claude
 .claude/
+
+# Sensitive docs (do not leak)
+docs/api-spec.md

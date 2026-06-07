@@ -6,6 +6,8 @@ import com.sagestock.domain.CrossMarker
 import com.sagestock.domain.CrossType
 import com.sagestock.domain.IndicatorSet
 import com.sagestock.domain.Market
+import com.sagestock.domain.Prediction
+import com.sagestock.domain.PredictionStatus
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.RiskLevel
@@ -13,8 +15,12 @@ import com.sagestock.domain.Signal
 import com.sagestock.domain.SignalType
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
+import com.sagestock.domain.StockSnapshot
+import com.sagestock.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -22,7 +28,8 @@ import javax.inject.Singleton
 
 @Singleton
 class MockStockRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : StockRepository {
 
     private val allStocks: List<Stock> by lazy { loadStocks() }
@@ -32,46 +39,63 @@ class MockStockRepository @Inject constructor(
         delay(300)
         if (query.isBlank()) return Result.Success(emptyList())
         val q = query.lowercase()
-        val matched = allStocks.filter {
-            it.ticker.lowercase().contains(q) || it.name.lowercase().contains(q)
+        val matched = withContext(io) {
+            allStocks.filter {
+                it.ticker.lowercase().contains(q) || it.name.lowercase().contains(q)
+            }
         }
         return Result.Success(matched)
     }
 
+    override suspend fun getMarketSnapshots(): Result<List<StockSnapshot>> {
+        delay(200)
+        return withContext(io) { Result.Success(loadSnapshots()) }
+    }
+
     override suspend fun getQuote(ticker: String): Result<Quote> {
         delay(200)
-        val stock = allStocks.find { it.ticker == ticker }
-            ?: return Result.Error("종목을 찾을 수 없습니다: $ticker")
-        val indicators = loadIndicators(ticker) ?: return Result.Error("데이터 없음: $ticker")
-        val last = indicators.candles.lastOrNull() ?: return Result.Error("캔들 없음")
-        val prev = indicators.candles.dropLast(1).lastOrNull()
-        val change = if (prev != null) last.close - prev.close else 0.0
-        val changePct = if (prev != null && prev.close != 0.0) change / prev.close * 100 else 0.0
-        return Result.Success(
-            Quote(
-                ticker = ticker,
-                price = last.close,
-                change = change,
-                changePercent = changePct,
-                open = last.open,
-                high = last.high,
-                low = last.low,
-                volume = last.volume,
-                isDelayed = stock.market == Market.KR,
+        return withContext(io) {
+            val stock = allStocks.find { it.ticker == ticker }
+                ?: return@withContext Result.Error("종목을 찾을 수 없습니다: $ticker")
+            val indicators = loadIndicators(ticker) ?: return@withContext Result.Error("데이터 없음: $ticker")
+            val last = indicators.candles.lastOrNull() ?: return@withContext Result.Error("캔들 없음")
+            val prev = indicators.candles.dropLast(1).lastOrNull()
+            val change = if (prev != null) last.close - prev.close else 0.0
+            val changePct = if (prev != null && prev.close != 0.0) change / prev.close * 100 else 0.0
+            Result.Success(
+                Quote(
+                    ticker = ticker,
+                    price = last.close,
+                    change = change,
+                    changePercent = changePct,
+                    open = last.open,
+                    high = last.high,
+                    low = last.low,
+                    volume = last.volume,
+                    isDelayed = stock.market == Market.KR,
+                    market = stock.market,
+                )
             )
-        )
+        }
     }
 
     override suspend fun getIndicators(ticker: String): Result<IndicatorSet> {
         delay(200)
-        return loadIndicators(ticker)
-            ?.let { Result.Success(it) }
-            ?: Result.Error("지표 데이터 없음: $ticker")
+        return withContext(io) {
+            loadIndicators(ticker)
+                ?.let { Result.Success(it) }
+                ?: Result.Error("지표 데이터 없음: $ticker")
+        }
     }
 
     override suspend fun getSignals(): Result<List<Signal>> {
         delay(150)
-        return Result.Success(allSignals)
+        return withContext(io) { Result.Success(allSignals) }
+    }
+
+    override suspend fun getPredictions(): Result<List<Prediction>> {
+        delay(150)
+        return withContext(io) { Result.Success(loadPredictions()) }
     }
 
     private fun loadStocks(): List<Stock> {
@@ -86,6 +110,32 @@ class MockStockRepository @Inject constructor(
                 exchange = o.getString("exchange"),
             )
         }
+    }
+
+    private fun loadSnapshots(): List<StockSnapshot> {
+        return runCatching {
+            val json = context.assets.open("mock/quotes.json").bufferedReader().readText()
+            val arr = JSONArray(json)
+            val byTicker = allStocks.associateBy { it.ticker }
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    val stock = byTicker[o.getString("ticker")] ?: continue
+                    val sparkArr = o.optJSONArray("sparkline")
+                    val spark = if (sparkArr == null) emptyList() else List(sparkArr.length()) { sparkArr.getDouble(it) }
+                    add(
+                        StockSnapshot(
+                            stock = stock,
+                            price = o.getDouble("price"),
+                            change = o.getDouble("change"),
+                            changePercent = o.getDouble("changePercent"),
+                            volume = o.getLong("volume"),
+                            sparkline = spark,
+                        )
+                    )
+                }
+            }
+        }.getOrElse { emptyList() }
     }
 
     private fun loadIndicators(ticker: String): IndicatorSet? {
@@ -140,6 +190,37 @@ class MockStockRepository @Inject constructor(
                 divergenceMarkers = List(divArr.length()) { i -> divArr.getInt(i) },
             )
         }.getOrNull()
+    }
+
+    private fun loadPredictions(): List<Prediction> {
+        return runCatching {
+            val json = context.assets.open("mock/predictions.json").bufferedReader().readText()
+            val arr = JSONArray(json)
+
+            fun stringList(o: JSONObject, key: String): List<String> {
+                if (!o.has(key)) return emptyList()
+                val a = o.getJSONArray(key)
+                return List(a.length()) { a.getString(it) }
+            }
+
+            List(arr.length()) { i ->
+                val o = arr.getJSONObject(i)
+                Prediction(
+                    stock = Stock(
+                        ticker = o.getString("ticker"),
+                        name = o.getString("name"),
+                        market = Market.valueOf(o.getString("market")),
+                        exchange = o.getString("exchange"),
+                    ),
+                    status = PredictionStatus.valueOf(o.getString("status")),
+                    riseProbability = o.optDouble("riseProbability", 0.0),
+                    expectedReturnPercent = o.optDouble("expectedReturnPercent", 0.0),
+                    confidence = o.optDouble("confidence", 0.0),
+                    reasons = stringList(o, "reasons"),
+                    riskFactors = stringList(o, "riskFactors"),
+                )
+            }
+        }.getOrElse { emptyList() }
     }
 
     private fun loadSignals(): List<Signal> {
