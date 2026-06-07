@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -37,11 +38,11 @@ class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val ticker: String = checkNotNull(savedStateHandle["ticker"])
-    private val initialHighlight: Int = savedStateHandle["index"] ?: -1
+    private val ticker: String = checkNotNull(savedStateHandle[ARG_TICKER])
+    private val initialHighlight: Int = savedStateHandle[ARG_INDEX] ?: -1
 
     private val _uiState = MutableStateFlow(DetailUiState(ticker = ticker, highlightIndex = initialHighlight))
-    val uiState: StateFlow<DetailUiState> = _uiState
+    val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
     init { load() }
 
@@ -63,5 +64,10 @@ class DetailViewModel @Inject constructor(
                 indicators = indicatorsDeferred.await(),
             )}
         }
+    }
+
+    companion object {
+        const val ARG_TICKER = "ticker"
+        const val ARG_INDEX = "index"
     }
 }

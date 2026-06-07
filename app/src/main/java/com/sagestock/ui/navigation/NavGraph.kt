@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sagestock.ui.detail.DetailScreen
+import com.sagestock.ui.detail.DetailViewModel
 import com.sagestock.ui.search.SearchScreen
 import com.sagestock.ui.signal.SignalScreen
 
@@ -39,11 +40,11 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = Screen.Detail.route,
             arguments = listOf(
-                navArgument("ticker") { type = NavType.StringType },
-                navArgument("index") { type = NavType.IntType; defaultValue = -1 },
+                navArgument(DetailViewModel.ARG_TICKER) { type = NavType.StringType },
+                navArgument(DetailViewModel.ARG_INDEX) { type = NavType.IntType; defaultValue = -1 },
             ),
         ) { back ->
-            val ticker = back.arguments?.getString("ticker") ?: return@composable
+            val ticker = back.arguments?.getString(DetailViewModel.ARG_TICKER) ?: return@composable
             DetailScreen(ticker = ticker, onBack = { navController.popBackStack() })
         }
     }
