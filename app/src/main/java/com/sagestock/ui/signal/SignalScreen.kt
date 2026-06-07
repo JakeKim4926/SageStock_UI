@@ -131,9 +131,10 @@ fun SignalContent(
                 }
             }
             else -> {
+                val latestDate = state.filtered.maxOfOrNull { it.date }
                 LazyColumn {
                     items(state.filtered, key = { it.id }) { signal ->
-                        SignalCard(signal = signal, onClick = { onSignalClick(signal) })
+                        SignalCard(signal = signal, isNew = signal.date == latestDate, onClick = { onSignalClick(signal) })
                         HorizontalDivider(color = c.line)
                     }
                 }
@@ -161,7 +162,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SignalCard(signal: Signal, onClick: () -> Unit) {
+private fun SignalCard(signal: Signal, isNew: Boolean, onClick: () -> Unit) {
     val c = SageTheme.colors
     val dims = SageTheme.dims
     Column(
@@ -171,7 +172,7 @@ private fun SignalCard(signal: Signal, onClick: () -> Unit) {
             .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // 헤더: 종목 + 날짜
+        // 헤더: 종목 + (NEW) + 날짜
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -188,6 +189,17 @@ private fun SignalCard(signal: Signal, onClick: () -> Unit) {
                         .background(c.surface2)
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
+                if (isNew) {
+                    Text(
+                        "NEW",
+                        style = SageTypography.labelSmall,
+                        color = c.onBrand,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(SageTheme.price.up)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
             Text(signal.date, style = SageTypography.labelSmall, color = c.textTertiary)
         }
@@ -233,20 +245,24 @@ private fun RiskBar(riskLevel: RiskLevel) {
 // ── 헬퍼 확장 ──────────────────────────────────────────────────────────────
 
 private fun SignalType.displayName() = when (this) {
-    SignalType.GOLDEN_CROSS       -> "골든크로스"
-    SignalType.DEAD_CROSS         -> "데드크로스"
-    SignalType.RSI_OVERSOLD       -> "RSI 과매도"
-    SignalType.RSI_OVERBOUGHT     -> "RSI 과매수"
-    SignalType.BOLLINGER_BREAKOUT -> "볼린저 돌파"
+    SignalType.GOLDEN_CROSS        -> "골든크로스"
+    SignalType.DEAD_CROSS          -> "데드크로스"
+    SignalType.RSI_OVERSOLD        -> "RSI 과매도"
+    SignalType.RSI_OVERBOUGHT      -> "RSI 과매수"
+    SignalType.BOLLINGER_BREAKOUT  -> "볼린저 돌파"
+    SignalType.BULLISH_DIVERGENCE  -> "상승 다이버전스"
+    SignalType.BEARISH_DIVERGENCE  -> "하락 다이버전스"
 }
 
 @Composable
 private fun SignalType.chipColor(c: com.sagestock.ui.theme.SageStockColors): Color = when (this) {
-    SignalType.GOLDEN_CROSS       -> SageTheme.price.up
-    SignalType.DEAD_CROSS         -> SageTheme.price.down
-    SignalType.RSI_OVERSOLD       -> c.positive
-    SignalType.RSI_OVERBOUGHT     -> c.warning
-    SignalType.BOLLINGER_BREAKOUT -> c.brand
+    SignalType.GOLDEN_CROSS        -> SageTheme.price.up
+    SignalType.DEAD_CROSS          -> SageTheme.price.down
+    SignalType.RSI_OVERSOLD        -> c.positive
+    SignalType.RSI_OVERBOUGHT      -> c.warning
+    SignalType.BOLLINGER_BREAKOUT  -> c.brand
+    SignalType.BULLISH_DIVERGENCE  -> SageTheme.price.up
+    SignalType.BEARISH_DIVERGENCE  -> SageTheme.price.down
 }
 
 private fun RiskLevel.displayName() = when (this) {

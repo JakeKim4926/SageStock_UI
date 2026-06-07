@@ -40,6 +40,9 @@ import com.sagestock.domain.Prediction
 import com.sagestock.domain.PredictionStatus
 import com.sagestock.domain.Result
 import com.sagestock.domain.Stock
+import com.sagestock.ui.components.ButtonTone
+import com.sagestock.ui.components.EmptyState
+import com.sagestock.ui.components.SageButton
 import com.sagestock.ui.theme.SageStockTheme
 import com.sagestock.ui.theme.SageTheme
 import com.sagestock.ui.theme.SageTypography
@@ -79,9 +82,11 @@ fun PredictionContent(
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = c.textPrimary)
             }
-            Text("AI 예측", style = SageTypography.titleMedium, color = c.textPrimary)
-            Spacer(Modifier.width(6.dp))
-            BetaBadge()
+            Column(Modifier.weight(1f)) {
+                Text("AI 급등주 예측", style = SageTypography.titleMedium, color = c.textPrimary)
+                Text("베타 · 모델 v0", style = SageTypography.labelSmall, color = c.textTertiary)
+            }
+            ExperimentalTag()
         }
         HorizontalDivider(color = c.line)
 
@@ -102,14 +107,18 @@ fun PredictionContent(
                 }
             }
             is Result.Success -> {
-                LazyColumn {
-                    items(predictions.data, key = { it.stock.ticker }) { prediction ->
-                        PredictionCard(
-                            prediction = prediction,
-                            isWatched = prediction.stock.ticker in state.watchedTickers,
-                            onToggleWatch = { onWatchlistToggle(prediction.stock) },
-                        )
-                        HorizontalDivider(color = c.line)
+                if (predictions.data.none { it.status == PredictionStatus.READY }) {
+                    PredictionEmptyState()
+                } else {
+                    LazyColumn {
+                        items(predictions.data, key = { it.stock.ticker }) { prediction ->
+                            PredictionCard(
+                                prediction = prediction,
+                                isWatched = prediction.stock.ticker in state.watchedTickers,
+                                onToggleWatch = { onWatchlistToggle(prediction.stock) },
+                            )
+                            HorizontalDivider(color = c.line)
+                        }
                     }
                 }
             }
@@ -118,17 +127,54 @@ fun PredictionContent(
 }
 
 @Composable
-private fun BetaBadge() {
+private fun ExperimentalTag() {
     val c = SageTheme.colors
     Text(
-        "BETA",
+        "실험적",
         style = SageTypography.labelSmall,
-        color = c.brand,
+        color = c.warning,
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, c.brand.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .clip(RoundedCornerShape(20.dp))
+            .background(c.warning.copy(alpha = 0.12f))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
     )
+}
+
+@Composable
+private fun PredictionEmptyState() {
+    val c = SageTheme.colors
+    val dims = SageTheme.dims
+    Column(Modifier.fillMaxSize()) {
+        EmptyState(
+            title = "AI 모델 준비중",
+            desc = "아직 예측 모델이 연결되지 않았어요.\n연결되면 급등 후보와 근거를 여기서 바로 확인할 수 있어요.",
+            modifier = Modifier.weight(1f),
+            action = { SageButton(text = "연결 상태 확인", tone = ButtonTone.OUTLINE, onClick = {}) },
+        )
+        HorizontalDivider(color = c.line)
+        Column(Modifier.padding(dims.screenPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            EmptyStatusNote("데이터 부족", "학습용 가격 이력이 60일 미만", c.warning)
+            EmptyStatusNote("분석 불가", "거래정지·상장폐지 종목", SageTheme.price.down)
+        }
+    }
+}
+
+@Composable
+private fun EmptyStatusNote(tag: String, desc: String, tone: Color) {
+    val c = SageTheme.colors
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.surface).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            tag,
+            style = SageTypography.labelSmall,
+            color = tone,
+            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(tone.copy(alpha = 0.12f)).padding(horizontal = 8.dp, vertical = 3.dp),
+        )
+        Text(desc, style = SageTypography.labelSmall, color = c.textTertiary)
+    }
 }
 
 @Composable

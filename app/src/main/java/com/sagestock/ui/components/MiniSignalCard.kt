@@ -58,4 +58,6 @@ private fun SignalType.chip(): Pair<String, Color> = when (this) {
     SignalType.RSI_OVERSOLD -> "RSI 과매도" to SageTheme.colors.positive
     SignalType.RSI_OVERBOUGHT -> "RSI 과매수" to SageTheme.colors.warning
     SignalType.BOLLINGER_BREAKOUT -> "볼린저 돌파" to SageTheme.colors.warning
+    SignalType.BULLISH_DIVERGENCE -> "상승 다이버전스" to SageTheme.price.up
+    SignalType.BEARISH_DIVERGENCE -> "하락 다이버전스" to SageTheme.price.down
 }
