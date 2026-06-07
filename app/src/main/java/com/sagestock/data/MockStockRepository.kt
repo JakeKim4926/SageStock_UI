@@ -6,6 +6,8 @@ import com.sagestock.domain.CrossMarker
 import com.sagestock.domain.CrossType
 import com.sagestock.domain.IndicatorSet
 import com.sagestock.domain.Market
+import com.sagestock.domain.Prediction
+import com.sagestock.domain.PredictionStatus
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.RiskLevel
@@ -85,6 +87,11 @@ class MockStockRepository @Inject constructor(
         return withContext(io) { Result.Success(allSignals) }
     }
 
+    override suspend fun getPredictions(): Result<List<Prediction>> {
+        delay(150)
+        return withContext(io) { Result.Success(loadPredictions()) }
+    }
+
     private fun loadStocks(): List<Stock> {
         val json = context.assets.open("mock/stocks.json").bufferedReader().readText()
         val arr = JSONArray(json)
@@ -151,6 +158,37 @@ class MockStockRepository @Inject constructor(
                 divergenceMarkers = List(divArr.length()) { i -> divArr.getInt(i) },
             )
         }.getOrNull()
+    }
+
+    private fun loadPredictions(): List<Prediction> {
+        return runCatching {
+            val json = context.assets.open("mock/predictions.json").bufferedReader().readText()
+            val arr = JSONArray(json)
+
+            fun stringList(o: JSONObject, key: String): List<String> {
+                if (!o.has(key)) return emptyList()
+                val a = o.getJSONArray(key)
+                return List(a.length()) { a.getString(it) }
+            }
+
+            List(arr.length()) { i ->
+                val o = arr.getJSONObject(i)
+                Prediction(
+                    stock = Stock(
+                        ticker = o.getString("ticker"),
+                        name = o.getString("name"),
+                        market = Market.valueOf(o.getString("market")),
+                        exchange = o.getString("exchange"),
+                    ),
+                    status = PredictionStatus.valueOf(o.getString("status")),
+                    riseProbability = o.optDouble("riseProbability", 0.0),
+                    expectedReturnPercent = o.optDouble("expectedReturnPercent", 0.0),
+                    confidence = o.optDouble("confidence", 0.0),
+                    reasons = stringList(o, "reasons"),
+                    riskFactors = stringList(o, "riskFactors"),
+                )
+            }
+        }.getOrElse { emptyList() }
     }
 
     private fun loadSignals(): List<Signal> {

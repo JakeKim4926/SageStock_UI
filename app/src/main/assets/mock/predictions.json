@@ -1,0 +1,47 @@
+[
+  {
+    "ticker": "005930",
+    "name": "삼성전자",
+    "market": "KR",
+    "exchange": "KOSPI",
+    "status": "READY",
+    "riseProbability": 0.68,
+    "expectedReturnPercent": 3.2,
+    "confidence": 0.74,
+    "reasons": ["EMA5·EMA20 골든크로스 발생", "RSI(14) 52 — 중립 구간 회복", "외국인 순매수 전환"],
+    "riskFactors": ["반도체 업황 둔화 우려", "환율 변동성 확대"]
+  },
+  {
+    "ticker": "NVDA",
+    "name": "NVIDIA",
+    "market": "US",
+    "exchange": "NASDAQ",
+    "status": "READY",
+    "riseProbability": 0.61,
+    "expectedReturnPercent": 2.4,
+    "confidence": 0.69,
+    "reasons": ["볼린저 밴드 상단 접근", "거래량 20일 평균 대비 +35%"],
+    "riskFactors": ["밸류에이션 부담", "금리 인상 우려"]
+  },
+  {
+    "ticker": "247540",
+    "name": "에코프로비엠",
+    "market": "KR",
+    "exchange": "KOSDAQ",
+    "status": "INSUFFICIENT_DATA"
+  },
+  {
+    "ticker": "TSLA",
+    "name": "Tesla",
+    "market": "US",
+    "exchange": "NASDAQ",
+    "status": "PREPARING"
+  },
+  {
+    "ticker": "042700",
+    "name": "한미반도체",
+    "market": "KR",
+    "exchange": "KOSPI",
+    "status": "UNAVAILABLE"
+  }
+]

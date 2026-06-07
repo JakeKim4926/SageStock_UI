@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.sagestock.ui.detail.DetailScreen
 import com.sagestock.ui.detail.DetailViewModel
 import com.sagestock.ui.home.HomeScreen
+import com.sagestock.ui.prediction.PredictionScreen
 import com.sagestock.ui.search.SearchScreen
 import com.sagestock.ui.signal.SignalScreen
 
@@ -16,6 +17,7 @@ sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object Search : Screen("search")
     data object Signals : Screen("signals")
+    data object Prediction : Screen("prediction")
     data object Detail : Screen("detail/{ticker}?index={index}") {
         fun go(ticker: String) = "detail/$ticker"
         fun goWithIndex(ticker: String, index: Int) = "detail/$ticker?index=$index"
@@ -29,7 +31,11 @@ fun NavGraph(navController: NavHostController) {
             HomeScreen(
                 onStockClick = { ticker -> navController.navigate(Screen.Detail.go(ticker)) },
                 onSearchClick = { navController.navigate(Screen.Search.route) },
+                onPredictionClick = { navController.navigate(Screen.Prediction.route) },
             )
+        }
+        composable(Screen.Prediction.route) {
+            PredictionScreen(onBack = { navController.popBackStack() })
         }
         composable(Screen.Search.route) {
             SearchScreen(
