@@ -8,10 +8,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sagestock.ui.detail.DetailScreen
 import com.sagestock.ui.detail.DetailViewModel
+import com.sagestock.ui.home.HomeScreen
 import com.sagestock.ui.search.SearchScreen
 import com.sagestock.ui.signal.SignalScreen
 
 sealed class Screen(val route: String) {
+    data object Home : Screen("home")
     data object Search : Screen("search")
     data object Signals : Screen("signals")
     data object Detail : Screen("detail/{ticker}?index={index}") {
@@ -22,7 +24,13 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun NavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = Screen.Search.route) {
+    NavHost(navController = navController, startDestination = Screen.Home.route) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onStockClick = { ticker -> navController.navigate(Screen.Detail.go(ticker)) },
+                onSearchClick = { navController.navigate(Screen.Search.route) },
+            )
+        }
         composable(Screen.Search.route) {
             SearchScreen(
                 onStockClick = { ticker -> navController.navigate(Screen.Detail.go(ticker)) },

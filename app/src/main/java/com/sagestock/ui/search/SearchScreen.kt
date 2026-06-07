@@ -18,11 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,6 +56,7 @@ fun SearchScreen(
         onQueryChange = viewModel::onQueryChange,
         onStockClick = onStockClick,
         onSignalsClick = onSignalsClick,
+        onWatchlistToggle = viewModel::onWatchlistToggle,
     )
 }
 
@@ -62,6 +66,7 @@ fun SearchContent(
     onQueryChange: (String) -> Unit,
     onStockClick: (String) -> Unit,
     onSignalsClick: () -> Unit = {},
+    onWatchlistToggle: (Stock) -> Unit = {},
 ) {
     val c = SageTheme.colors
     Column(Modifier.fillMaxSize().background(c.bg)) {
@@ -88,7 +93,12 @@ fun SearchContent(
                             }
                         }
                         items(r.data, key = { it.ticker }) { stock ->
-                            StockRow(stock = stock, onClick = { onStockClick(stock.ticker) })
+                            StockRow(
+                                stock = stock,
+                                isWatched = stock.ticker in state.watchedTickers,
+                                onClick = { onStockClick(stock.ticker) },
+                                onToggleWatch = { onWatchlistToggle(stock) },
+                            )
                             HorizontalDivider(color = c.line)
                         }
                     }
@@ -128,7 +138,7 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
 }
 
 @Composable
-private fun StockRow(stock: Stock, onClick: () -> Unit) {
+private fun StockRow(stock: Stock, isWatched: Boolean, onClick: () -> Unit, onToggleWatch: () -> Unit) {
     val c = SageTheme.colors
     val dims = SageTheme.dims
     Row(
@@ -146,6 +156,13 @@ private fun StockRow(stock: Stock, onClick: () -> Unit) {
             }
             Spacer(Modifier.height(2.dp))
             Text("${stock.ticker} · ${stock.exchange}", style = SageTypography.labelSmall, color = c.textTertiary)
+        }
+        IconButton(onClick = onToggleWatch) {
+            Icon(
+                imageVector = if (isWatched) Icons.Default.Check else Icons.Default.Add,
+                contentDescription = if (isWatched) "관심목록에서 제거" else "관심목록에 추가",
+                tint = if (isWatched) c.brand else c.textTertiary,
+            )
         }
     }
 }
@@ -194,7 +211,8 @@ private fun PreviewResults() = SageStockTheme {
             results = Result.Success(listOf(
                 Stock("005930", "삼성전자", Market.KR, "KOSPI"),
                 Stock("006400", "삼성SDI", Market.KR, "KOSPI"),
-            ))
+            )),
+            watchedTickers = setOf("005930"),
         ),
         onQueryChange = {},
         onStockClick = {},
