@@ -62,6 +62,7 @@ import com.sagestock.domain.Signal
 import com.sagestock.domain.Stock
 import com.sagestock.ui.components.EmptyState
 import com.sagestock.ui.components.MiniChip
+import com.sagestock.ui.components.SageButton
 import com.sagestock.ui.components.SageSegment
 import com.sagestock.ui.theme.PriceLargeTextStyle
 import com.sagestock.ui.theme.SageStockTheme
@@ -76,6 +77,7 @@ import java.util.Locale
 fun DetailScreen(
     ticker: String,
     onBack: () -> Unit,
+    onPaperTrade: (String) -> Unit = {},
     viewModel: DetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -83,6 +85,7 @@ fun DetailScreen(
         state = state,
         onBack = onBack,
         onRetry = viewModel::retry,
+        onPaperTrade = onPaperTrade,
         onSelectTab = viewModel::selectTab,
         onSetPeriod = viewModel::setPeriod,
         onSetCandleUnit = viewModel::setCandleUnit,
@@ -102,6 +105,7 @@ fun DetailContent(
     state: DetailUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onPaperTrade: (String) -> Unit = {},
     onSelectTab: (DetailTab) -> Unit = {},
     onSetPeriod: (ChartPeriod) -> Unit = {},
     onSetCandleUnit: (CandleUnit) -> Unit = {},
@@ -139,6 +143,7 @@ fun DetailContent(
                     quote = (state.quote as Result.Success<Quote>).data,
                     indicators = (state.indicators as Result.Success<IndicatorSet>).data,
                     state = state,
+                    onPaperTrade = onPaperTrade,
                     onSelectTab = onSelectTab,
                     onSetPeriod = onSetPeriod,
                     onSetCandleUnit = onSetCandleUnit,
@@ -214,6 +219,7 @@ private fun DetailBody(
     quote: Quote,
     indicators: IndicatorSet,
     state: DetailUiState,
+    onPaperTrade: (String) -> Unit,
     onSelectTab: (DetailTab) -> Unit,
     onSetPeriod: (ChartPeriod) -> Unit,
     onSetCandleUnit: (CandleUnit) -> Unit,
@@ -240,7 +246,7 @@ private fun DetailBody(
                 onToggleRsi, onToggleEma, onToggleBollinger, onToggleStochastic, onToggleDisparity,
             )
             DetailTab.SIGNALS -> SignalsTab(state.signals)
-            DetailTab.PAPER -> PaperTab()
+            DetailTab.PAPER -> PaperTab(state.ticker, onPaperTrade)
         }
     }
 }
@@ -416,11 +422,14 @@ private fun SignalsTab(signals: List<Signal>) {
 }
 
 @Composable
-private fun PaperTab() {
+private fun PaperTab(ticker: String, onPaperTrade: (String) -> Unit) {
     EmptyState(
-        title = "가상매매는 준비 중입니다",
-        desc = "이 종목으로 가상 매수·매도를 기록하는 기능이 곧 추가돼요.",
+        title = "이 종목 가상매매",
+        desc = "가상 매수·매도를 기록하면 가상매매 탭 포트폴리오에 반영돼요.",
         modifier = Modifier.height(220.dp),
+        action = {
+            SageButton(text = "가상 매수·매도 기록", onClick = { onPaperTrade(ticker) })
+        },
     )
 }
 
