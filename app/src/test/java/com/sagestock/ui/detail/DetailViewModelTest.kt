@@ -7,8 +7,11 @@ import com.sagestock.domain.IndicatorSet
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.StockRepository
+import com.sagestock.domain.WatchlistRepository
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -28,6 +31,7 @@ class DetailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val repo: StockRepository = mockk()
+    private val watchlistRepo: WatchlistRepository = mockk(relaxed = true)
 
     private val mockQuote = Quote("005930", 78400.0, 1400.0, 1.82, 77200.0, 78900.0, 76800.0, 12400000)
     private val mockIndicators = IndicatorSet(
@@ -40,6 +44,9 @@ class DetailViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { watchlistRepo.observeWatchlist() } returns flowOf(emptyList())
+        coEvery { repo.search(any()) } returns Result.Success(emptyList())
+        coEvery { repo.getSignals() } returns Result.Success(emptyList())
     }
 
     @After
@@ -55,7 +62,7 @@ class DetailViewModelTest {
         coEvery { repo.getQuote(any()) } coAnswers { kotlinx.coroutines.delay(1000); Result.Success(mockQuote) }
         coEvery { repo.getIndicators(any()) } coAnswers { kotlinx.coroutines.delay(1000); Result.Success(mockIndicators) }
 
-        val vm = DetailViewModel(repo, savedState())
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
             val first = awaitItem()
             assertTrue(first.quote is Result.Loading)
@@ -69,7 +76,7 @@ class DetailViewModelTest {
         coEvery { repo.getQuote("005930") } returns Result.Success(mockQuote)
         coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
 
-        val vm = DetailViewModel(repo, savedState())
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
             awaitItem() // Loading
 
@@ -87,7 +94,7 @@ class DetailViewModelTest {
         coEvery { repo.getQuote("005930") } returns Result.Error("종목 없음")
         coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
 
-        val vm = DetailViewModel(repo, savedState())
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
             awaitItem() // Loading
             advanceUntilIdle()
@@ -106,7 +113,7 @@ class DetailViewModelTest {
         )
         coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
 
-        val vm = DetailViewModel(repo, savedState())
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
             awaitItem()
             advanceUntilIdle()
@@ -128,7 +135,7 @@ class DetailViewModelTest {
         coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
         coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
 
-        val vm = DetailViewModel(repo, savedState())
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
         advanceUntilIdle()
 
         assertFalse(vm.uiState.value.config.showEma)
@@ -143,7 +150,7 @@ class DetailViewModelTest {
         coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
         coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
 
-        val vm = DetailViewModel(repo, savedState(index = 3))
+        val vm = DetailViewModel(repo, watchlistRepo, savedState(index = 3))
         assertEquals(3, vm.uiState.value.highlightIndex)
     }
 }
