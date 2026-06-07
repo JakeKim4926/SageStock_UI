@@ -19,6 +19,8 @@ import com.sagestock.ui.detail.DetailScreen
 import com.sagestock.ui.detail.DetailViewModel
 import com.sagestock.ui.home.HomeScreen
 import com.sagestock.ui.login.LoginScreen
+import com.sagestock.ui.paper.PaperInputScreen
+import com.sagestock.ui.paper.PaperInputViewModel
 import com.sagestock.ui.paper.PaperScreen
 import com.sagestock.ui.prediction.PredictionScreen
 import com.sagestock.ui.search.SearchScreen
@@ -39,6 +41,9 @@ sealed class Screen(val route: String) {
     data object Detail : Screen("detail/{ticker}?index={index}") {
         fun go(ticker: String) = "detail/$ticker"
         fun goWithIndex(ticker: String, index: Int) = "detail/$ticker?index=$index"
+    }
+    data object PaperInput : Screen("paper_input/{ticker}") {
+        fun go(ticker: String) = "paper_input/$ticker"
     }
 }
 
@@ -96,7 +101,7 @@ fun SageStockApp(navController: NavHostController = rememberNavController()) {
                 )
             }
             composable(Screen.Paper.route) {
-                PaperScreen()
+                PaperScreen(onStockClick = { ticker -> navController.navigate(Screen.Detail.go(ticker)) })
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
@@ -115,7 +120,20 @@ fun SageStockApp(navController: NavHostController = rememberNavController()) {
                 ),
             ) { back ->
                 val ticker = back.arguments?.getString(DetailViewModel.ARG_TICKER) ?: return@composable
-                DetailScreen(ticker = ticker, onBack = { navController.popBackStack() })
+                DetailScreen(
+                    ticker = ticker,
+                    onBack = { navController.popBackStack() },
+                    onPaperTrade = { navController.navigate(Screen.PaperInput.go(ticker)) },
+                )
+            }
+            composable(
+                route = Screen.PaperInput.route,
+                arguments = listOf(navArgument(PaperInputViewModel.ARG_TICKER) { type = NavType.StringType }),
+            ) {
+                PaperInputScreen(
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() },
+                )
             }
         }
     }

@@ -3,9 +3,12 @@ package com.sagestock.di
 import android.content.Context
 import androidx.room.Room
 import com.sagestock.data.MockStockRepository
+import com.sagestock.data.PaperRepositoryImpl
 import com.sagestock.data.WatchlistRepositoryImpl
+import com.sagestock.data.local.PaperTradeDao
 import com.sagestock.data.local.SageStockDatabase
 import com.sagestock.data.local.WatchlistDao
+import com.sagestock.domain.PaperRepository
 import com.sagestock.domain.StockRepository
 import com.sagestock.domain.WatchlistRepository
 import dagger.Binds
@@ -34,6 +37,10 @@ abstract class AppModule {
     @Singleton
     abstract fun bindWatchlistRepository(impl: WatchlistRepositoryImpl): WatchlistRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindPaperRepository(impl: PaperRepositoryImpl): PaperRepository
+
     companion object {
         @Provides
         @IoDispatcher
@@ -42,9 +49,14 @@ abstract class AppModule {
         @Provides
         @Singleton
         fun provideDatabase(@ApplicationContext context: Context): SageStockDatabase =
-            Room.databaseBuilder(context, SageStockDatabase::class.java, "sagestock.db").build()
+            Room.databaseBuilder(context, SageStockDatabase::class.java, "sagestock.db")
+                .fallbackToDestructiveMigration()
+                .build()
 
         @Provides
         fun provideWatchlistDao(database: SageStockDatabase): WatchlistDao = database.watchlistDao()
+
+        @Provides
+        fun providePaperTradeDao(database: SageStockDatabase): PaperTradeDao = database.paperTradeDao()
     }
 }
