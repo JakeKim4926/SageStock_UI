@@ -28,18 +28,15 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberCandlestickCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
@@ -54,6 +51,7 @@ import com.sagestock.domain.IndicatorSet
 import com.sagestock.domain.Market
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
+import com.sagestock.ui.theme.PriceLargeTextStyle
 import com.sagestock.ui.theme.SageStockTheme
 import com.sagestock.ui.theme.SageTheme
 import com.sagestock.ui.theme.SageTypography
@@ -68,7 +66,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     viewModel: DetailViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     DetailContent(
         state = state,
         onBack = onBack,
@@ -155,8 +153,9 @@ private fun DetailBody(
     onToggleDisparity: () -> Unit,
 ) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(dims.screenPadding)) {
             PriceBlock(quote = quote)
         }
         HorizontalDivider(color = c.line)
@@ -184,14 +183,14 @@ private fun DetailBody(
         // ── 크로스 마커 ──────────────────────────────────
         if (indicators.crossMarkers.isNotEmpty() || indicators.divergenceMarkers.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
-            HorizontalDivider(color = c.line, modifier = Modifier.padding(horizontal = 16.dp))
+            HorizontalDivider(color = c.line, modifier = Modifier.padding(horizontal = dims.screenPadding))
             Spacer(Modifier.height(12.dp))
-            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.padding(horizontal = dims.screenPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("감지된 신호", style = SageTypography.titleSmall, color = c.textPrimary)
                 indicators.crossMarkers.forEach { marker ->
                     val (label, color) = when (marker.type) {
-                        CrossType.GOLDEN -> "▲ 골든크로스" to c.up
-                        CrossType.DEAD   -> "▼ 데드크로스" to c.down
+                        CrossType.GOLDEN -> "▲ 골든크로스" to SageTheme.price.up
+                        CrossType.DEAD   -> "▼ 데드크로스" to SageTheme.price.down
                     }
                     val date = indicators.candles.getOrNull(marker.index)?.date ?: ""
                     Text(
@@ -219,7 +218,7 @@ private fun DetailBody(
             "보조지표",
             style = SageTypography.titleSmall,
             color = c.textSecondary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = dims.screenPadding, vertical = 8.dp),
         )
         IndicatorToggleRow("RSI (14)", "상대강도지수 — 과매수/과매도 판단", config.showRsi, onToggleRsi)
         IndicatorToggleRow("EMA", "5·20·60·120일 지수이동평균 오버레이", config.showEma, onToggleEma)
@@ -232,8 +231,9 @@ private fun DetailBody(
 @Composable
 private fun SubPanelLabel(title: String, value: String) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = dims.screenPadding, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = SageTypography.labelSmall, color = c.textTertiary)
@@ -356,11 +356,12 @@ private fun IndicatorToggleRow(
     onToggle: () -> Unit,
 ) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = dims.screenPadding, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -371,9 +372,9 @@ private fun IndicatorToggleRow(
             checked = checked,
             onCheckedChange = { onToggle() },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = c.onBrand,
                 checkedTrackColor = c.brand,
-                uncheckedThumbColor = Color.White,
+                uncheckedThumbColor = c.onBrand,
                 uncheckedTrackColor = c.line2,
                 uncheckedBorderColor = c.line2,
             ),
@@ -386,19 +387,19 @@ private fun PriceBlock(quote: Quote) {
     val c = SageTheme.colors
     val priceColor = priceColorOf(quote.change)
     val arrow = arrowOf(quote.change)
-    val isKr = quote.ticker.all { it.isDigit() }
+    val isKr = quote.market == Market.KR
     val fmt = if (isKr)
-        NumberFormat.getNumberInstance(Locale.KOREA).format(quote.price.toLong())
+        "₩" + NumberFormat.getNumberInstance(Locale.KOREA).format(quote.price.toLong())
     else
         "$%.2f".format(quote.price)
 
     Column {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(fmt, style = SageTypography.headlineSmall.copy(fontSize = 26.sp, fontWeight = FontWeight.Bold), color = c.textPrimary)
+            Text(fmt, style = PriceLargeTextStyle, color = c.textPrimary)
             Spacer(Modifier.width(10.dp))
             Text(
                 "$arrow ${"%.2f".format(quote.changePercent)}%",
-                style = SageTypography.bodyMedium.copy(fontSize = 14.sp),
+                style = SageTypography.bodyMedium,
                 color = priceColor,
                 modifier = Modifier.padding(bottom = 3.dp),
             )
@@ -425,7 +426,7 @@ private fun OhlcItem(label: String, value: Double, isKr: Boolean, isVolume: Bool
     val c = SageTheme.colors
     val formatted = when {
         isVolume -> "%.1fM".format(value / 1_000_000)
-        isKr -> NumberFormat.getNumberInstance(Locale.KOREA).format(value.toLong())
+        isKr -> "₩" + NumberFormat.getNumberInstance(Locale.KOREA).format(value.toLong())
         else -> "$%.1f".format(value)
     }
     Column {
