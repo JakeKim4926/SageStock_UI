@@ -7,8 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
-import com.sagestock.ui.navigation.NavGraph
+import com.sagestock.ui.navigation.SageStockApp
 import com.sagestock.ui.theme.SageStockTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -20,7 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SageStockTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    NavGraph(navController = rememberNavController())
+                    SageStockApp()
                 }
             }
         }
