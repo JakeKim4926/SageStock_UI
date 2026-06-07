@@ -25,8 +25,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +47,7 @@ fun SearchScreen(
     onSignalsClick: () -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     SearchContent(
         state = state,
         onQueryChange = viewModel::onQueryChange,
@@ -101,10 +101,11 @@ fun SearchContent(
 @Composable
 private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = dims.screenPadding, vertical = 12.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(c.surface)
             .padding(horizontal = 12.dp, vertical = 13.dp),
@@ -129,11 +130,12 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
 @Composable
 private fun StockRow(stock: Stock, onClick: () -> Unit) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -151,11 +153,12 @@ private fun StockRow(stock: Stock, onClick: () -> Unit) {
 @Composable
 private fun SignalsFeedRow(onClick: () -> Unit) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Default.Notifications, contentDescription = null, tint = c.brand, modifier = Modifier.size(20.dp))
