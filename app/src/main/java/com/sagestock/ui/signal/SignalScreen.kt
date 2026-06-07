@@ -46,8 +46,8 @@ import com.sagestock.ui.theme.SageTypography
 
 @Composable
 fun SignalScreen(
-    onBack: () -> Unit,
     onSignalClick: (Signal) -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: SignalViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -63,22 +63,30 @@ fun SignalScreen(
 @Composable
 fun SignalContent(
     state: SignalUiState,
-    onBack: () -> Unit,
     onSignalClick: (Signal) -> Unit,
     onFilterChange: (SignalType?) -> Unit,
     onRetry: () -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     val c = SageTheme.colors
     Column(Modifier.fillMaxSize().background(c.bg)) {
         // ── 상단 바 ──────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = c.textPrimary)
+        if (onBack != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = c.textPrimary)
+                }
+                Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
             }
-            Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
+        } else {
+            // 탭 모드(와이어프레임 06): 뒤로가기 없이 제목+부제.
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text("매매 시그널", style = SageTypography.titleMedium, color = c.textPrimary)
+                Text("전체 종목 신호 피드", style = SageTypography.labelSmall, color = c.textTertiary)
+            }
         }
         HorizontalDivider(color = c.line)
 
