@@ -80,6 +80,7 @@ fun SageStockApp(navController: NavHostController = rememberNavController()) {
                     onStockClick = { ticker -> navController.navigate(Screen.Detail.go(ticker)) },
                     onSearchClick = { navController.navigateToTab(Screen.Search.route) },
                     onPredictionClick = { navController.navigate(Screen.Prediction.route) },
+                    onSignalsClick = { navController.navigateToTab(Screen.Signals.route) },
                 )
             }
             composable(Screen.Search.route) {
