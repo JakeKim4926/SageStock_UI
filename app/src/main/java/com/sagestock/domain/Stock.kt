@@ -53,7 +53,10 @@ data class IndicatorSet(
     val divergenceMarkers: List<Int> = emptyList(),
 )
 
-enum class SignalType { GOLDEN_CROSS, DEAD_CROSS, RSI_OVERSOLD, RSI_OVERBOUGHT, BOLLINGER_BREAKOUT }
+enum class SignalType {
+    GOLDEN_CROSS, DEAD_CROSS, RSI_OVERSOLD, RSI_OVERBOUGHT, BOLLINGER_BREAKOUT,
+    BULLISH_DIVERGENCE, BEARISH_DIVERGENCE,
+}
 enum class RiskLevel { LOW, MEDIUM, HIGH }
 
 data class Signal(
