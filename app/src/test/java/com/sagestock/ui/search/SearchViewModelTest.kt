@@ -5,10 +5,13 @@ import com.sagestock.domain.Market
 import com.sagestock.domain.Result
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
+import com.sagestock.domain.WatchlistRepository
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -26,10 +29,12 @@ class SearchViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val repo: StockRepository = mockk()
+    private val watchlistRepo: WatchlistRepository = mockk()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { watchlistRepo.observeWatchlist() } returns flowOf(emptyList())
     }
 
     @After
@@ -39,7 +44,7 @@ class SearchViewModelTest {
 
     @Test
     fun `initial state has empty results`() = runTest {
-        val vm = SearchViewModel(repo)
+        val vm = SearchViewModel(repo, watchlistRepo)
         vm.uiState.test {
             val initial = awaitItem()
             assertTrue((initial.results as Result.Success).data.isEmpty())
@@ -49,7 +54,7 @@ class SearchViewModelTest {
 
     @Test
     fun `blank query stays empty without calling repo`() = runTest {
-        val vm = SearchViewModel(repo)
+        val vm = SearchViewModel(repo, watchlistRepo)
         vm.onQueryChange("  ")
         advanceUntilIdle()
         val state = vm.uiState.value
@@ -61,7 +66,7 @@ class SearchViewModelTest {
         val stocks = listOf(Stock("005930", "삼성전자", Market.KR, "KOSPI"))
         coEvery { repo.search("삼성") } returns Result.Success(stocks)
 
-        val vm = SearchViewModel(repo)
+        val vm = SearchViewModel(repo, watchlistRepo)
         vm.onQueryChange("삼성")
         advanceTimeBy(400)
         advanceUntilIdle()
@@ -73,7 +78,7 @@ class SearchViewModelTest {
     fun `error from repo surfaces as Error state`() = runTest {
         coEvery { repo.search("오류") } returns Result.Error("서버 오류")
 
-        val vm = SearchViewModel(repo)
+        val vm = SearchViewModel(repo, watchlistRepo)
         vm.onQueryChange("오류")
         advanceTimeBy(400)
         advanceUntilIdle()

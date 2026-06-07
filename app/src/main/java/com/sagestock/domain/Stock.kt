@@ -66,3 +66,15 @@ data class Signal(
     val riskLevel: RiskLevel,
     val candleIndex: Int = -1,
 )
+
+enum class PredictionStatus { READY, PREPARING, INSUFFICIENT_DATA, UNAVAILABLE }
+
+data class Prediction(
+    val stock: Stock,
+    val status: PredictionStatus,
+    val riseProbability: Double = 0.0,
+    val expectedReturnPercent: Double = 0.0,
+    val confidence: Double = 0.0,
+    val reasons: List<String> = emptyList(),
+    val riskFactors: List<String> = emptyList(),
+)
