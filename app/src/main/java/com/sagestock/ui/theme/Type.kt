@@ -21,3 +21,8 @@ val PriceTextStyle = TextStyle(
     fontWeight = FontWeight.Bold,
     fontFamily = FontFamily.Monospace,
 )
+
+val PriceLargeTextStyle = TextStyle(
+    fontSize = 26.sp,
+    fontWeight = FontWeight.Bold,
+)
