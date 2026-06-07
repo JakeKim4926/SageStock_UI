@@ -27,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sagestock.domain.Result
 import com.sagestock.domain.RiskLevel
 import com.sagestock.domain.Signal
 import com.sagestock.domain.SignalType
@@ -49,7 +50,7 @@ fun SignalScreen(
     onSignalClick: (Signal) -> Unit,
     viewModel: SignalViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     SignalContent(
         state = state,
         onBack = onBack,
@@ -102,15 +103,15 @@ fun SignalContent(
 
         // ── 바디 ──────────────────────────────────────────
         when {
-            state.signals is com.sagestock.domain.Result.Loading -> {
+            state.signals is Result.Loading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = c.brand)
                 }
             }
-            state.signals is com.sagestock.domain.Result.Error -> {
+            state.signals is Result.Error -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text((state.signals as com.sagestock.domain.Result.Error).message, color = c.textSecondary, style = SageTypography.bodyMedium)
+                        Text((state.signals as Result.Error).message, color = c.textSecondary, style = SageTypography.bodyMedium)
                         Spacer(Modifier.height(12.dp))
                         Button(onClick = onRetry) { Text("다시 시도") }
                     }
@@ -146,7 +147,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             label,
             style = SageTypography.labelSmall,
-            color = if (selected) Color.White else c.textSecondary,
+            color = if (selected) c.onBrand else c.textSecondary,
         )
     }
 }
@@ -154,11 +155,12 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun SignalCard(signal: Signal, onClick: () -> Unit) {
     val c = SageTheme.colors
+    val dims = SageTheme.dims
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         // 헤더: 종목 + 날짜
@@ -232,8 +234,8 @@ private fun SignalType.displayName() = when (this) {
 
 @Composable
 private fun SignalType.chipColor(c: com.sagestock.ui.theme.SageStockColors): Color = when (this) {
-    SignalType.GOLDEN_CROSS       -> c.up
-    SignalType.DEAD_CROSS         -> c.down
+    SignalType.GOLDEN_CROSS       -> SageTheme.price.up
+    SignalType.DEAD_CROSS         -> SageTheme.price.down
     SignalType.RSI_OVERSOLD       -> c.positive
     SignalType.RSI_OVERBOUGHT     -> c.warning
     SignalType.BOLLINGER_BREAKOUT -> c.brand
@@ -267,7 +269,7 @@ private val sampleSignals = listOf(
 @Composable
 private fun PreviewSignals() = SageStockTheme {
     SignalContent(
-        state = SignalUiState(signals = com.sagestock.domain.Result.Success(sampleSignals), filter = null),
+        state = SignalUiState(signals = Result.Success(sampleSignals), filter = null),
         onBack = {},
         onSignalClick = {},
         onFilterChange = {},
@@ -279,7 +281,7 @@ private fun PreviewSignals() = SageStockTheme {
 @Composable
 private fun PreviewLoading() = SageStockTheme {
     SignalContent(
-        state = SignalUiState(signals = com.sagestock.domain.Result.Loading),
+        state = SignalUiState(signals = Result.Loading),
         onBack = {},
         onSignalClick = {},
         onFilterChange = {},
