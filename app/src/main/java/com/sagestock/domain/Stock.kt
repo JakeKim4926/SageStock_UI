@@ -19,6 +19,7 @@ data class Quote(
     val low: Double,
     val volume: Long,
     val isDelayed: Boolean = true,
+    val market: Market = Market.KR,
 )
 
 data class Candle(
