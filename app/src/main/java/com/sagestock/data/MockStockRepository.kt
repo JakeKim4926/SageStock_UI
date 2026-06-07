@@ -15,6 +15,7 @@ import com.sagestock.domain.Signal
 import com.sagestock.domain.SignalType
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
+import com.sagestock.domain.StockSnapshot
 import com.sagestock.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -44,6 +45,11 @@ class MockStockRepository @Inject constructor(
             }
         }
         return Result.Success(matched)
+    }
+
+    override suspend fun getMarketSnapshots(): Result<List<StockSnapshot>> {
+        delay(200)
+        return withContext(io) { Result.Success(loadSnapshots()) }
     }
 
     override suspend fun getQuote(ticker: String): Result<Quote> {
@@ -104,6 +110,32 @@ class MockStockRepository @Inject constructor(
                 exchange = o.getString("exchange"),
             )
         }
+    }
+
+    private fun loadSnapshots(): List<StockSnapshot> {
+        return runCatching {
+            val json = context.assets.open("mock/quotes.json").bufferedReader().readText()
+            val arr = JSONArray(json)
+            val byTicker = allStocks.associateBy { it.ticker }
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    val stock = byTicker[o.getString("ticker")] ?: continue
+                    val sparkArr = o.optJSONArray("sparkline")
+                    val spark = if (sparkArr == null) emptyList() else List(sparkArr.length()) { sparkArr.getDouble(it) }
+                    add(
+                        StockSnapshot(
+                            stock = stock,
+                            price = o.getDouble("price"),
+                            change = o.getDouble("change"),
+                            changePercent = o.getDouble("changePercent"),
+                            volume = o.getLong("volume"),
+                            sparkline = spark,
+                        )
+                    )
+                }
+            }
+        }.getOrElse { emptyList() }
     }
 
     private fun loadIndicators(ticker: String): IndicatorSet? {
