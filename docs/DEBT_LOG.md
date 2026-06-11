@@ -16,9 +16,9 @@
 - 설명: Phase 7 중 **시세·지표·시그널(StockRepository)** 슬라이스만 Retrofit으로 구현하고 `BuildConfig.USE_MOCK=true`로 Mock 유지 중. 아래는 범위 밖으로 남김:
   - **예측**: 백엔드 `/predictions` 엔드포인트가 openapi.json에 없음(feature-spec B5 = 최종 단계). `getPredictions()`는 `MockStockRepository`에 위임. 백엔드 추가 시 그 메서드만 교체.
   - **Watchlist/Paper 서버 동기화(U1)**: 현재 Room 로컬. api-spec §3·§4는 서버 집계(holdings/account)·동기화를 요구하나 ViewModel/UI 변경이 따라와 "UI 무수정" 원칙과 충돌 → 별도 슬라이스.
-  - **인증(U4)**: `AuthRepository`·토큰 인터셉터·401 refresh 재시도 미구현. `SessionManager`는 여전히 로컬 스텁.
+  - **인증(U4) — 인프라 완료, UI 배선 남음**: `AuthRepository`(Retrofit) + `AuthInterceptor`(Bearer 부착) + `TokenAuthenticator`(401→refresh 1회 재시도) + `SessionManager` 토큰 저장까지 구현·테스트 완료. 단 `LoginViewModel`/스플래시가 아직 `SessionManager`를 직접 쓰고 `AuthRepository`를 소비하지 않음 → 실로그인 배선은 UI 변경이라 별도.
 - 위험도: 중간 (실서버 전환 시 한 번에 안 끝남)
-- 후속: ① Watchlist/Paper RetrofitRepository + holdings/account 도메인 메서드 추가, ② AuthInterceptor + refresh, ③ 백엔드 `/predictions` 생기면 예측 교체
+- 후속: ① 로그인/스플래시 ViewModel을 `AuthRepository`로 배선, ② Watchlist/Paper RetrofitRepository + holdings/account 도메인 메서드 추가, ③ 백엔드 `/predictions` 생기면 예측 교체
 
 ### [2026-06-11] openapi.json 계약 불일치 — base URL /v1 중복, 에러 바디 형태
 - 위치: `app/build.gradle.kts` (`API_BASE_URL`), `data/remote/ApiCall.kt`, `data/remote/SageStockApi.kt`
