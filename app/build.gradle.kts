@@ -17,6 +17,10 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Phase 7: Mock↔실서버 토글. 실서버 배포 전까지 USE_MOCK=true 유지(앱은 Mock으로 동작).
+        buildConfigField("Boolean", "USE_MOCK", "true")
+        buildConfigField("String", "API_BASE_URL", "\"https://api.example.com/\"")
     }
 
     buildTypes {
@@ -34,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -75,6 +80,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.mockwebserver)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
