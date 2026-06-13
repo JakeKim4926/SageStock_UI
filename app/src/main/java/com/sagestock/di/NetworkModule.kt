@@ -86,6 +86,7 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory(CONTENT_TYPE.toMediaType()))
 
     private const val CONNECT_TIMEOUT_SEC = 15L
-    private const val READ_TIMEOUT_SEC = 20L
+    // render 무료 플랜은 유휴 시 콜드 스타트(~30~50초)로 첫 응답이 지연됨 → read 타임아웃을 넉넉히.
+    private const val READ_TIMEOUT_SEC = 60L
     private const val CONTENT_TYPE = "application/json"
 }
