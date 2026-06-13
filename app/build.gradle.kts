@@ -18,9 +18,10 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Phase 7: Mock↔실서버 토글. 실서버 배포 전까지 USE_MOCK=true 유지(앱은 Mock으로 동작).
-        buildConfigField("Boolean", "USE_MOCK", "true")
-        buildConfigField("String", "API_BASE_URL", "\"https://api.example.com/\"")
+        // Phase 7: Mock↔실서버 토글. render 실서버 연결(인증·시세·지표·시그널은 실연동).
+        // 주의: 백엔드 시드 데이터 전까지 검색/스냅샷/시그널은 빈 응답일 수 있음. watchlist·paper는 여전히 로컬.
+        buildConfigField("Boolean", "USE_MOCK", "false")
+        buildConfigField("String", "API_BASE_URL", "\"https://sagestock-be.onrender.com/\"")
     }
 
     buildTypes {
