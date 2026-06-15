@@ -2,9 +2,9 @@ package com.sagestock.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sagestock.data.SessionManager
+import com.sagestock.domain.AuthRepository
+import com.sagestock.domain.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +23,7 @@ data class LoginUiState(
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val sessionManager: SessionManager,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -35,23 +35,22 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         val s = _uiState.value
-        if (s.id != TEST_ID || s.password != TEST_PASSWORD) {
+        if (s.id.isBlank() || s.password.isBlank()) {
             _uiState.update { it.copy(error = ERROR_INVALID_CREDENTIALS) }
             return
         }
         viewModelScope.launch {
             _uiState.update { it.copy(loading = true, error = null) }
-            delay(LOGIN_DELAY_MS)
-            sessionManager.login(autoLogin = s.autoLogin)
-            _uiState.update { it.copy(loading = false, loggedIn = true) }
+            // 입력란은 "아이디"지만 서버(api-spec §1)는 email을 받으므로 그대로 전달한다.
+            when (val result = authRepository.login(s.id, s.password, s.autoLogin)) {
+                is Result.Success -> _uiState.update { it.copy(loading = false, loggedIn = true) }
+                is Result.Error -> _uiState.update { it.copy(loading = false, error = result.message) }
+                Result.Loading -> Unit
+            }
         }
     }
 
     private companion object {
-        // Phase 1 테스트 계정(스텁). 실제 인증은 Phase 7 FastAPI 연동에서 교체.
-        const val TEST_ID = "admin"
-        const val TEST_PASSWORD = "1234"
         const val ERROR_INVALID_CREDENTIALS = "아이디 또는 비밀번호가 올바르지 않습니다."
-        const val LOGIN_DELAY_MS = 500L
     }
 }

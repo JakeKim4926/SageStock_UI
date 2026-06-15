@@ -17,6 +17,11 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Phase 7: Mock↔실서버 토글. render 실서버 연결(인증·시세·지표·시그널은 실연동).
+        // 주의: 백엔드 시드 데이터 전까지 검색/스냅샷/시그널은 빈 응답일 수 있음. watchlist·paper는 여전히 로컬.
+        buildConfigField("Boolean", "USE_MOCK", "false")
+        buildConfigField("String", "API_BASE_URL", "\"https://sagestock-be.onrender.com/\"")
     }
 
     buildTypes {
@@ -34,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -75,6 +81,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.mockwebserver)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
