@@ -5,10 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Home
@@ -43,10 +46,14 @@ enum class Tab(val route: String, val label: String, val icon: ImageVector) {
 @Composable
 fun SageBottomBar(currentRoute: String?, onSelect: (Tab) -> Unit) {
     val c = SageTheme.colors
-    Column {
+    Column(Modifier.background(c.bg)) {
         HorizontalDivider(color = c.line)
         Row(
-            modifier = Modifier.fillMaxWidth().background(c.bg).height(64.dp),
+            // edge-to-edge: 시스템 네비게이션 바 인셋만큼 콘텐츠를 위로 올린다(배경은 인셋 영역까지 덮음).
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .height(64.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Tab.entries.forEach { tab ->
