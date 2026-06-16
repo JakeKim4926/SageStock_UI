@@ -9,6 +9,7 @@ import com.sagestock.domain.Prediction
 import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalScore
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
 import com.sagestock.domain.StockSnapshot
@@ -48,6 +49,9 @@ class RetrofitStockRepository @Inject constructor(
 
     override suspend fun getSignals(): Result<List<Signal>> =
         safeApiCall(io, json) { api.getSignals().map { it.toDomain() } }
+
+    override suspend fun getSignalRanking(): Result<List<SignalScore>> =
+        safeApiCall(io, json) { api.getSignalRanking().map { it.toDomain() } }
 
     override suspend fun getPredictions(): Result<List<Prediction>> = mock.getPredictions()
 }

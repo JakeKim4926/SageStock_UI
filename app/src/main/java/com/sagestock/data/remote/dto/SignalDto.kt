@@ -14,3 +14,12 @@ data class SignalDto(
     val riskLevel: String,
     val candleIndex: Int = -1,
 )
+
+/** openapi `SignalScore` — 관심종목 시그널 종합점수 랭킹(`/v1/signals/ranking`). */
+@Serializable
+data class SignalScoreDto(
+    val stock: StockDto,
+    val score: Double,
+    val buySignals: List<String> = emptyList(),
+    val sellSignals: List<String> = emptyList(),
+)

@@ -3,9 +3,12 @@ package com.sagestock.data.remote
 import com.sagestock.data.remote.dto.IndicatorSetDto
 import com.sagestock.data.remote.dto.QuoteDto
 import com.sagestock.data.remote.dto.SignalDto
+import com.sagestock.data.remote.dto.SignalScoreDto
 import com.sagestock.data.remote.dto.StockDto
 import com.sagestock.data.remote.dto.StockSnapshotDto
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -38,4 +41,20 @@ interface SageStockApi {
         @Query("offset") offset: Int = 0,
         @Query("limit") limit: Int = 20,
     ): List<SignalDto>
+
+    @GET("v1/signals/ranking")
+    suspend fun getSignalRanking(
+        @Query("market") market: String? = null,
+        @Query("offset") offset: Int = 0,
+        @Query("limit") limit: Int = 20,
+    ): List<SignalScoreDto>
+
+    @GET("v1/watchlist")
+    suspend fun getWatchlist(): List<StockDto>
+
+    @PUT("v1/watchlist/{ticker}")
+    suspend fun addWatchlist(@Path("ticker") ticker: String)
+
+    @DELETE("v1/watchlist/{ticker}")
+    suspend fun removeWatchlist(@Path("ticker") ticker: String)
 }

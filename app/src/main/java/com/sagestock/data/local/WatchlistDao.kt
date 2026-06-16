@@ -10,6 +10,9 @@ interface WatchlistDao {
     @Query("SELECT * FROM watchlist ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<WatchlistEntity>>
 
+    @Query("SELECT * FROM watchlist")
+    suspend fun getAll(): List<WatchlistEntity>
+
     @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE ticker = :ticker)")
     suspend fun contains(ticker: String): Boolean
 

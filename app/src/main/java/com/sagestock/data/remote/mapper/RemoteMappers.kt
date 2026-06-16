@@ -5,6 +5,7 @@ import com.sagestock.data.remote.dto.CrossMarkerDto
 import com.sagestock.data.remote.dto.IndicatorSetDto
 import com.sagestock.data.remote.dto.QuoteDto
 import com.sagestock.data.remote.dto.SignalDto
+import com.sagestock.data.remote.dto.SignalScoreDto
 import com.sagestock.data.remote.dto.StockDto
 import com.sagestock.data.remote.dto.StockSnapshotDto
 import com.sagestock.domain.Candle
@@ -15,6 +16,7 @@ import com.sagestock.domain.Market
 import com.sagestock.domain.Quote
 import com.sagestock.domain.RiskLevel
 import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalScore
 import com.sagestock.domain.SignalType
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockSnapshot
@@ -92,4 +94,11 @@ fun SignalDto.toDomain() = Signal(
     description = description,
     riskLevel = RiskLevel.valueOf(riskLevel),
     candleIndex = candleIndex,
+)
+
+fun SignalScoreDto.toDomain() = SignalScore(
+    stock = stock.toDomain(),
+    score = score,
+    buySignals = buySignals.map { SignalType.valueOf(it) },
+    sellSignals = sellSignals.map { SignalType.valueOf(it) },
 )

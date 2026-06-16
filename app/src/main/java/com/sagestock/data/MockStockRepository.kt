@@ -12,6 +12,7 @@ import com.sagestock.domain.Quote
 import com.sagestock.domain.Result
 import com.sagestock.domain.RiskLevel
 import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalScore
 import com.sagestock.domain.SignalType
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
@@ -91,6 +92,21 @@ class MockStockRepository @Inject constructor(
     override suspend fun getSignals(): Result<List<Signal>> {
         delay(150)
         return withContext(io) { Result.Success(allSignals) }
+    }
+
+    override suspend fun getSignalRanking(): Result<List<SignalScore>> {
+        delay(150)
+        return withContext(io) {
+            val byTicker = allStocks.associateBy { it.ticker }
+            val ranking = allSignals.groupBy { it.ticker }.mapNotNull { (ticker, sigs) ->
+                val stock = byTicker[ticker] ?: return@mapNotNull null
+                val types = sigs.map { it.type }
+                val buy = types.filter { it in BUY_SIGNALS }.distinct()
+                val sell = types.filter { it in SELL_SIGNALS }.distinct()
+                SignalScore(stock, buy.size.toDouble() - sell.size, buy, sell)
+            }.sortedByDescending { it.score }
+            Result.Success(ranking)
+        }
     }
 
     override suspend fun getPredictions(): Result<List<Prediction>> {
@@ -241,5 +257,11 @@ class MockStockRepository @Inject constructor(
                 )
             }
         }.getOrElse { emptyList() }
+    }
+
+    private companion object {
+        // 시그널 방향(api-spec): 크로스·다이버전스·RSI는 매수/매도로 구분, 볼린저 돌파는 방향 미구분이라 제외.
+        val BUY_SIGNALS = setOf(SignalType.GOLDEN_CROSS, SignalType.BULLISH_DIVERGENCE, SignalType.RSI_OVERSOLD)
+        val SELL_SIGNALS = setOf(SignalType.DEAD_CROSS, SignalType.BEARISH_DIVERGENCE, SignalType.RSI_OVERBOUGHT)
     }
 }
