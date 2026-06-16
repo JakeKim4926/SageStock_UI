@@ -45,11 +45,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberCandlestickCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.candlestickSeries
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.sagestock.domain.Candle
@@ -62,6 +67,7 @@ import com.sagestock.domain.Signal
 import com.sagestock.domain.Stock
 import com.sagestock.ui.components.EmptyState
 import com.sagestock.ui.components.MiniChip
+import com.sagestock.ui.components.formatPrice
 import com.sagestock.ui.components.SageButton
 import com.sagestock.ui.components.SageSegment
 import com.sagestock.ui.theme.PriceLargeTextStyle
@@ -240,7 +246,7 @@ private fun DetailBody(
         HorizontalDivider(color = c.line)
 
         when (state.selectedTab) {
-            DetailTab.CHART -> ChartTab(indicators, state, onSetPeriod, onSetCandleUnit)
+            DetailTab.CHART -> ChartTab(indicators, state, quote.market, onSetPeriod, onSetCandleUnit)
             DetailTab.INDICATORS -> IndicatorsTab(
                 indicators, state.config, onOpenSettings,
                 onToggleRsi, onToggleEma, onToggleBollinger, onToggleStochastic, onToggleDisparity,
@@ -280,6 +286,7 @@ private fun DetailTabRow(selected: DetailTab, onSelect: (DetailTab) -> Unit) {
 private fun ChartTab(
     indicators: IndicatorSet,
     state: DetailUiState,
+    market: Market,
     onSetPeriod: (ChartPeriod) -> Unit,
     onSetCandleUnit: (CandleUnit) -> Unit,
 ) {
@@ -321,7 +328,7 @@ private fun ChartTab(
             if (indicators.bollingerLower.size == indicators.candles.size) add(indicators.bollingerLower.win())
         }
     }
-    MainChart(displayCandles, overlays)
+    MainChart(displayCandles, overlays, market)
     MarkersList(indicators)
 }
 
@@ -503,7 +510,7 @@ private fun SubPanelLabel(title: String, value: String) {
 }
 
 @Composable
-private fun MainChart(candles: List<Candle>, overlays: List<List<Double>>) {
+private fun MainChart(candles: List<Candle>, overlays: List<List<Double>>, market: Market) {
     if (candles.isEmpty()) return
     val producer = remember { CartesianChartModelProducer() }
     LaunchedEffect(candles, overlays) {
@@ -519,21 +526,35 @@ private fun MainChart(candles: List<Candle>, overlays: List<List<Double>>) {
             }
         }
     }
-    if (overlays.isNotEmpty()) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(rememberCandlestickCartesianLayer(), rememberLineCartesianLayer()),
-            modelProducer = producer,
-            scrollState = rememberVicoScrollState(),
-            modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 8.dp),
+    // Y축 = 가격(통화 포맷), X축 = 캔들 날짜. 인덱스를 candles의 date로 매핑.
+    val priceAxis = VerticalAxis.rememberStart(
+        valueFormatter = remember(market) { CartesianValueFormatter { _, value, _ -> formatPrice(market, value) } },
+    )
+    val dateAxis = HorizontalAxis.rememberBottom(
+        valueFormatter = remember(candles) {
+            CartesianValueFormatter { _, value, _ -> candles.getOrNull(value.toInt())?.date.orEmpty() }
+        },
+    )
+    val chart = if (overlays.isNotEmpty()) {
+        rememberCartesianChart(
+            rememberCandlestickCartesianLayer(),
+            rememberLineCartesianLayer(),
+            startAxis = priceAxis,
+            bottomAxis = dateAxis,
         )
     } else {
-        CartesianChartHost(
-            chart = rememberCartesianChart(rememberCandlestickCartesianLayer()),
-            modelProducer = producer,
-            scrollState = rememberVicoScrollState(),
-            modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 8.dp),
+        rememberCartesianChart(
+            rememberCandlestickCartesianLayer(),
+            startAxis = priceAxis,
+            bottomAxis = dateAxis,
         )
     }
+    CartesianChartHost(
+        chart = chart,
+        modelProducer = producer,
+        scrollState = rememberVicoScrollState(),
+        modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 8.dp),
+    )
 }
 
 @Composable
@@ -543,7 +564,7 @@ private fun RsiChart(rsiSeries: List<Double>) {
         producer.runTransaction { lineSeries { series(rsiSeries.map { it.toFloat() }) } }
     }
     CartesianChartHost(
-        chart = rememberCartesianChart(rememberLineCartesianLayer()),
+        chart = rememberCartesianChart(rememberLineCartesianLayer(), startAxis = VerticalAxis.rememberStart()),
         modelProducer = producer,
         scrollState = rememberVicoScrollState(),
         modifier = Modifier.fillMaxWidth().height(80.dp).padding(horizontal = 8.dp),
@@ -562,7 +583,7 @@ private fun LineSubChart(series1: List<Double>, series2: List<Double>) {
         }
     }
     CartesianChartHost(
-        chart = rememberCartesianChart(rememberLineCartesianLayer()),
+        chart = rememberCartesianChart(rememberLineCartesianLayer(), startAxis = VerticalAxis.rememberStart()),
         modelProducer = producer,
         scrollState = rememberVicoScrollState(),
         modifier = Modifier.fillMaxWidth().height(80.dp).padding(horizontal = 8.dp),
@@ -576,7 +597,7 @@ private fun BarSubChart(series: List<Double>) {
         producer.runTransaction { lineSeries { series(series.map { it.toFloat() }) } }
     }
     CartesianChartHost(
-        chart = rememberCartesianChart(rememberLineCartesianLayer()),
+        chart = rememberCartesianChart(rememberLineCartesianLayer(), startAxis = VerticalAxis.rememberStart()),
         modelProducer = producer,
         scrollState = rememberVicoScrollState(),
         modifier = Modifier.fillMaxWidth().height(80.dp).padding(horizontal = 8.dp),
