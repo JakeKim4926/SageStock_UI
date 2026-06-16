@@ -8,6 +8,7 @@ import com.sagestock.domain.Prediction
 import com.sagestock.domain.PredictionStatus
 import com.sagestock.domain.Result
 import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalScore
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
 import com.sagestock.domain.StockSnapshot
@@ -32,8 +33,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
-/** 상위 종목 세그먼트(상승률/거래량/AI 후보). */
-enum class TopFilter { RISERS, VOLUME, AI }
+/** 상위 종목 세그먼트(매수 우세/매도 우세/AI 후보). */
+enum class TopFilter { BUY, SELL, AI }
 
 data class HomeUiState(
     val date: String = "",
@@ -41,23 +42,28 @@ data class HomeUiState(
     val usStatus: MarketStatus = MarketStatus.CLOSED,
     val loading: Boolean = true,
     val watchFilter: Market? = null,
-    val topFilter: TopFilter = TopFilter.RISERS,
+    val topFilter: TopFilter = TopFilter.BUY,
     val snapshots: List<StockSnapshot> = emptyList(),
     val watchedSnapshots: List<StockSnapshot> = emptyList(),
+    val signalRanking: List<SignalScore> = emptyList(),
     val signals: List<Signal> = emptyList(),
     val predictions: List<Prediction> = emptyList(),
 ) {
     val watchlist: List<StockSnapshot>
         get() = watchedSnapshots.filter { watchFilter == null || it.stock.market == watchFilter }
 
-    val topMovers: List<StockSnapshot>
+    /** 매수/매도 세그먼트용 시그널 랭킹. 매수=양수 점수, 매도=음수 점수(강한 순). 백엔드 score desc 정렬 기반. */
+    val topRanking: List<SignalScore>
         get() = when (topFilter) {
-            TopFilter.RISERS -> snapshots.sortedByDescending { it.changePercent }
-            TopFilter.VOLUME -> snapshots.sortedByDescending { it.volume }
-            TopFilter.AI -> {
-                val aiTickers = aiCandidates.map { it.stock.ticker }.toSet()
-                snapshots.filter { it.stock.ticker in aiTickers }
-            }
+            TopFilter.BUY -> signalRanking.filter { it.score > 0 }
+            TopFilter.SELL -> signalRanking.filter { it.score < 0 }.sortedBy { it.score }
+            TopFilter.AI -> emptyList()
+        }.take(MAX_TOP_MOVERS)
+
+    /** AI 후보 세그먼트용 스냅샷(예측 READY 종목의 시세). */
+    val aiMovers: List<StockSnapshot>
+        get() = aiCandidates.map { it.stock.ticker }.toSet().let { tickers ->
+            snapshots.filter { it.stock.ticker in tickers }
         }.take(MAX_TOP_MOVERS)
 
     val aiCandidates: List<Prediction>
@@ -84,6 +90,7 @@ class HomeViewModel @Inject constructor(
     private var rebuildJob: Job? = null
 
     init {
+        viewModelScope.launch { runCatching { watchlistRepository.sync() } }
         watchlistRepository.observeWatchlist()
             .onEach { stocks -> watchedStocks = stocks; rebuildWatchlist() }
             .launchIn(viewModelScope)
@@ -99,9 +106,10 @@ class HomeViewModel @Inject constructor(
     private fun load() = viewModelScope.launch {
         val snapshots = (stockRepository.getMarketSnapshots() as? Result.Success)?.data ?: emptyList()
         val signals = (stockRepository.getSignals() as? Result.Success)?.data ?: emptyList()
+        val ranking = (stockRepository.getSignalRanking() as? Result.Success)?.data ?: emptyList()
         val predictions = (stockRepository.getPredictions() as? Result.Success)?.data ?: emptyList()
         _uiState.update {
-            it.copy(loading = false, snapshots = snapshots, signals = signals, predictions = predictions)
+            it.copy(loading = false, snapshots = snapshots, signalRanking = ranking, signals = signals, predictions = predictions)
         }
         rebuildWatchlist()
     }

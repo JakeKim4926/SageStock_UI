@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,18 +49,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sagestock.domain.Market
 import com.sagestock.domain.MarketStatus
 import com.sagestock.domain.Signal
+import com.sagestock.domain.SignalScore
 import com.sagestock.domain.SignalType
 import com.sagestock.domain.RiskLevel
 import com.sagestock.domain.Stock
 import com.sagestock.domain.StockSnapshot
 import com.sagestock.ui.components.MarketStatusBadge
+import com.sagestock.ui.components.MiniChip
 import com.sagestock.ui.components.MiniSignalCard
 import com.sagestock.ui.components.SageSegment
+import com.sagestock.ui.components.SignalChip
 import com.sagestock.ui.components.SnapshotRow
 import com.sagestock.ui.components.StatusBadge
 import com.sagestock.ui.theme.SageStockTheme
 import com.sagestock.ui.theme.SageTheme
 import com.sagestock.ui.theme.SageTypography
+import com.sagestock.ui.theme.arrowOf
+import com.sagestock.ui.theme.priceColorOf
 
 @Composable
 fun HomeScreen(
@@ -295,25 +301,81 @@ private fun TopMoversSection(
     val dims = SageTheme.dims
     Spacer(Modifier.height(4.dp))
     SageSegment(
-        options = listOf("상승률 상위", "거래량 상위", "AI 후보"),
-        selectedIndex = when (state.topFilter) { TopFilter.RISERS -> 0; TopFilter.VOLUME -> 1; TopFilter.AI -> 2 },
-        onSelect = { onTopFilter(when (it) { 1 -> TopFilter.VOLUME; 2 -> TopFilter.AI; else -> TopFilter.RISERS }) },
+        options = listOf("매수 상위", "매도 상위", "AI 후보"),
+        selectedIndex = when (state.topFilter) { TopFilter.BUY -> 0; TopFilter.SELL -> 1; TopFilter.AI -> 2 },
+        onSelect = { onTopFilter(when (it) { 1 -> TopFilter.SELL; 2 -> TopFilter.AI; else -> TopFilter.BUY }) },
         modifier = Modifier.padding(horizontal = dims.screenPadding, vertical = 10.dp),
     )
-    if (state.topFilter == TopFilter.AI && state.aiCandidates.isEmpty()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onPredictionClick)
-                .padding(horizontal = dims.screenPadding, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = c.brand, modifier = Modifier.height(18.dp))
-            Text("AI 후보 미리보기", style = SageTypography.bodySmall, color = c.textPrimary)
-            Text("모델 연결 시 활성화", style = SageTypography.labelSmall, color = c.textTertiary)
+    when (state.topFilter) {
+        TopFilter.BUY, TopFilter.SELL -> {
+            if (state.topRanking.isEmpty()) {
+                Text(
+                    if (state.topFilter == TopFilter.BUY) "매수 우세 관심종목이 아직 없어요." else "매도 우세 관심종목이 아직 없어요.",
+                    style = SageTypography.bodySmall,
+                    color = c.textTertiary,
+                    modifier = Modifier.padding(horizontal = dims.screenPadding, vertical = 16.dp),
+                )
+            } else {
+                state.topRanking.forEach { item ->
+                    SignalRankingRow(item, onClick = { onStockClick(item.stock.ticker) })
+                }
+            }
         }
-    } else {
-        state.topMovers.forEach { snapshot ->
-            SnapshotRow(snapshot = snapshot, onClick = { onStockClick(snapshot.stock.ticker) })
+        TopFilter.AI -> {
+            if (state.aiCandidates.isEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onPredictionClick)
+                        .padding(horizontal = dims.screenPadding, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = c.brand, modifier = Modifier.height(18.dp))
+                    Text("AI 후보 미리보기", style = SageTypography.bodySmall, color = c.textPrimary)
+                    Text("모델 연결 시 활성화", style = SageTypography.labelSmall, color = c.textTertiary)
+                }
+            } else {
+                state.aiMovers.forEach { snapshot ->
+                    SnapshotRow(snapshot = snapshot, onClick = { onStockClick(snapshot.stock.ticker) })
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 매수/매도 랭킹 행. 좌: 종목명·시장칩·티커 + 기여 시그널 칩. 우: 매수/매도 배지(▲▼ + 등락색) + score.
+ * 색은 등락색 재사용(매수=up/▲, 매도=down/▼) — KR↔US 팔레트 전환·접근성(기호 병행) 준수.
+ */
+@Composable
+private fun SignalRankingRow(item: SignalScore, onClick: () -> Unit) {
+    val c = SageTheme.colors
+    val dims = SageTheme.dims
+    val scoreColor = priceColorOf(item.score)
+    val label = when { item.score > 0 -> "매수"; item.score < 0 -> "매도"; else -> "중립" }
+    val signals = if (item.score >= 0) item.buySignals else item.sellSignals
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+            .padding(horizontal = dims.screenPadding, vertical = dims.cardPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(item.stock.name, style = SageTypography.titleSmall, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.width(6.dp))
+                MiniChip(item.stock.market.name)
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(item.stock.ticker, style = SageTypography.labelSmall, color = c.textTertiary)
+            if (signals.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    signals.take(2).forEach { SignalChip(it) }
+                }
+            }
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("${arrowOf(item.score)} $label", style = SageTypography.labelMedium, color = scoreColor)
+            Text("%+.2f".format(item.score), style = SageTypography.labelSmall, color = c.textTertiary)
         }
     }
 }
@@ -339,6 +401,10 @@ private fun PreviewHome() = SageStockTheme {
             watchedSnapshots = listOf(
                 sampleSnapshot("005930", "삼성전자", Market.KR, 78400.0, 1.82),
                 sampleSnapshot("NVDA", "NVIDIA", Market.US, 1204.5, -0.94),
+            ),
+            signalRanking = listOf(
+                SignalScore(Stock("005930", "삼성전자", Market.KR, "KOSPI"), 3.42, listOf(SignalType.GOLDEN_CROSS, SignalType.RSI_OVERSOLD), emptyList()),
+                SignalScore(Stock("000660", "SK하이닉스", Market.KR, "KOSPI"), -1.8, emptyList(), listOf(SignalType.DEAD_CROSS)),
             ),
             signals = listOf(
                 Signal("1", "247540", "에코프로비엠", SignalType.GOLDEN_CROSS, "2026.06.05", "20·60일선 상향 돌파", RiskLevel.LOW),
