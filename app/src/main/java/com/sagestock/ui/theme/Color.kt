@@ -18,6 +18,8 @@ val Up          = Color(0xFFE0392B)
 val Down        = Color(0xFF1565C0)
 val Positive    = Color(0xFF2E9E5B)
 val Warning     = Color(0xFFC77700)
+/** 파괴적 동작(삭제) 전용 고정 빨강. up/down 등락 의미색과 달리 KR↔US 팔레트 전환에도 불변. */
+val Danger      = Color(0xFFE0392B)
 
 val TextPrimary   = Color(0xFF1B1E23)
 val TextSecondary = Color(0xFF6A7280)
@@ -28,13 +30,13 @@ val TextTertiary  = Color(0xFF9AA1AC)
 data class SageStockColors(
     val bg: Color, val surface: Color, val surface2: Color,
     val line: Color, val line2: Color, val brand: Color, val onBrand: Color,
-    val up: Color, val down: Color, val positive: Color, val warning: Color,
+    val up: Color, val down: Color, val positive: Color, val warning: Color, val danger: Color,
     val textPrimary: Color, val textSecondary: Color, val textTertiary: Color,
 )
 
 val LightColors = SageStockColors(
     bg = Bg, surface = Surface, surface2 = Surface2, line = Line, line2 = Line2, brand = Brand, onBrand = OnBrand,
-    up = Up, down = Down, positive = Positive, warning = Warning,
+    up = Up, down = Down, positive = Positive, warning = Warning, danger = Danger,
     textPrimary = TextPrimary, textSecondary = TextSecondary, textTertiary = TextTertiary,
 )
 

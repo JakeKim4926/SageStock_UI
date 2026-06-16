@@ -25,6 +25,10 @@ class WatchlistRepositoryImpl @Inject constructor(
             dao.insert(stock.toEntity())
         }
     }
+
+    override suspend fun remove(ticker: String) = dao.deleteByTicker(ticker)
+
+    override suspend fun clearAll() = dao.clear()
 }
 
 private fun WatchlistEntity.toDomain() = Stock(

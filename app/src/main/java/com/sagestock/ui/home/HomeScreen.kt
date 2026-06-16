@@ -12,20 +12,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +78,8 @@ fun HomeScreen(
         onSignalsClick = onSignalsClick,
         onWatchFilter = viewModel::setWatchFilter,
         onTopFilter = viewModel::setTopFilter,
+        onRemoveWatched = viewModel::removeWatched,
+        onClearWatchlist = viewModel::clearWatchlist,
     )
 }
 
@@ -78,6 +92,8 @@ fun HomeContent(
     onSignalsClick: () -> Unit = {},
     onWatchFilter: (Market?) -> Unit = {},
     onTopFilter: (TopFilter) -> Unit = {},
+    onRemoveWatched: (String) -> Unit = {},
+    onClearWatchlist: () -> Unit = {},
 ) {
     val c = SageTheme.colors
     val dims = SageTheme.dims
@@ -118,7 +134,7 @@ fun HomeContent(
         }
 
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-            WatchlistSection(state, onStockClick, onWatchFilter)
+            WatchlistSection(state, onStockClick, onWatchFilter, onRemoveWatched, onClearWatchlist)
             HorizontalDivider(color = c.line)
             SignalsSection(state.todaySignals, onSignalsClick, onStockClick)
             HorizontalDivider(color = c.line)
@@ -142,11 +158,36 @@ private fun SectionHeader(title: String, action: String? = null, onAction: () ->
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WatchlistSection(state: HomeUiState, onStockClick: (String) -> Unit, onWatchFilter: (Market?) -> Unit) {
+private fun WatchlistSection(
+    state: HomeUiState,
+    onStockClick: (String) -> Unit,
+    onWatchFilter: (Market?) -> Unit,
+    onRemoveWatched: (String) -> Unit,
+    onClearWatchlist: () -> Unit,
+) {
     val c = SageTheme.colors
     val dims = SageTheme.dims
-    SectionHeader("관심종목", "더보기 ›")
+    var showClearDialog by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = dims.screenPadding, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("관심종목", style = SageTypography.titleSmall, color = c.textPrimary, modifier = Modifier.weight(1f))
+        if (state.watchedSnapshots.isNotEmpty()) {
+            Text(
+                "전체삭제",
+                style = SageTypography.labelSmall,
+                color = c.textTertiary,
+                modifier = Modifier.clickable { showClearDialog = true },
+            )
+            Spacer(Modifier.width(12.dp))
+        }
+        Text("더보기 ›", style = SageTypography.labelSmall, color = c.textTertiary)
+    }
+
     SageSegment(
         options = listOf("전체", "한국", "미국"),
         selectedIndex = when (state.watchFilter) { null -> 0; Market.KR -> 1; Market.US -> 2 },
@@ -163,8 +204,67 @@ private fun WatchlistSection(state: HomeUiState, onStockClick: (String) -> Unit,
         )
     } else {
         state.watchlist.forEach { snapshot ->
-            SnapshotRow(snapshot = snapshot, onClick = { onStockClick(snapshot.stock.ticker) })
+            key(snapshot.stock.ticker) {
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { value ->
+                        if (value == SwipeToDismissBoxValue.Settled) {
+                            false
+                        } else {
+                            onRemoveWatched(snapshot.stock.ticker)
+                            true
+                        }
+                    },
+                )
+                SwipeToDismissBox(
+                    state = dismissState,
+                    backgroundContent = { SwipeDeleteBackground(dismissState.dismissDirection) },
+                ) {
+                    SnapshotRow(
+                        snapshot = snapshot,
+                        onClick = { onStockClick(snapshot.stock.ticker) },
+                        modifier = Modifier.background(c.bg),
+                    )
+                }
+            }
         }
+    }
+
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            containerColor = c.bg,
+            title = { Text("관심종목 전체삭제", style = SageTypography.titleSmall, color = c.textPrimary) },
+            text = {
+                Text(
+                    "관심종목 ${state.watchedSnapshots.size}개를 모두 삭제할까요?",
+                    style = SageTypography.bodySmall,
+                    color = c.textSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onClearWatchlist(); showClearDialog = false }) {
+                    Text("삭제", color = c.danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text("취소", color = c.textSecondary)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun SwipeDeleteBackground(direction: SwipeToDismissBoxValue) {
+    val c = SageTheme.colors
+    val dims = SageTheme.dims
+    val alignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+    Box(
+        Modifier.fillMaxSize().background(c.danger).padding(horizontal = dims.screenPadding),
+        contentAlignment = alignment,
+    ) {
+        Icon(Icons.Default.Delete, contentDescription = "삭제", tint = c.onBrand)
     }
 }
 

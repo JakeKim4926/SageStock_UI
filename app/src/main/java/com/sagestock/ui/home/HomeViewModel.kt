@@ -74,7 +74,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val stockRepository: StockRepository,
-    watchlistRepository: WatchlistRepository,
+    private val watchlistRepository: WatchlistRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(date = todayLabel(), krStatus = marketStatus(Market.KR), usStatus = marketStatus(Market.US)))
@@ -92,6 +92,9 @@ class HomeViewModel @Inject constructor(
 
     fun setWatchFilter(market: Market?) = _uiState.update { it.copy(watchFilter = market) }
     fun setTopFilter(filter: TopFilter) = _uiState.update { it.copy(topFilter = filter) }
+
+    fun removeWatched(ticker: String) = viewModelScope.launch { watchlistRepository.remove(ticker) }
+    fun clearWatchlist() = viewModelScope.launch { watchlistRepository.clearAll() }
 
     private fun load() = viewModelScope.launch {
         val snapshots = (stockRepository.getMarketSnapshots() as? Result.Success)?.data ?: emptyList()

@@ -186,6 +186,7 @@ AI 급등주 예측  [실험적]
 | color/down | #1565C0 | 하락(파랑, KR 기본) |
 | color/positive | #2E9E5B | 정상·낮은 위험 |
 | color/warning | #C77700 | 프리/애프터마켓·중위험 |
+| color/danger | #E0392B | 파괴적 동작(삭제 등) — 등락색(up/down)과 무관한 고정 빨강(미국식 전환에도 불변) |
 | text/primary | #1B1E23 | 본문·가격 |
 | text/secondary | #6A7280 | 보조 |
 | text/tertiary | #9AA1AC | 힌트·라벨 |
