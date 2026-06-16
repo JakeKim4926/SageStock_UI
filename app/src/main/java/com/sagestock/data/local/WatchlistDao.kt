@@ -18,4 +18,7 @@ interface WatchlistDao {
 
     @Query("DELETE FROM watchlist WHERE ticker = :ticker")
     suspend fun deleteByTicker(ticker: String)
+
+    @Query("DELETE FROM watchlist")
+    suspend fun clear()
 }

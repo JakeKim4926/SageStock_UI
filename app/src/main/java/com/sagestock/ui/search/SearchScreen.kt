@@ -20,10 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -229,7 +229,7 @@ private fun StockRow(stock: Stock, isWatched: Boolean, onClick: () -> Unit, onTo
         }
         IconButton(onClick = onToggleWatch) {
             Icon(
-                imageVector = if (isWatched) Icons.Default.Check else Icons.Default.Add,
+                imageVector = if (isWatched) Icons.Filled.Star else Icons.Filled.StarBorder,
                 contentDescription = if (isWatched) "관심목록에서 제거" else "관심목록에 추가",
                 tint = if (isWatched) c.brand else c.textTertiary,
             )
