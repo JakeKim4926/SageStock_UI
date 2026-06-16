@@ -8,10 +8,15 @@ import com.sagestock.domain.Prediction
 import com.sagestock.domain.PredictionStatus
 import com.sagestock.domain.Result
 import com.sagestock.domain.Signal
+import com.sagestock.domain.Stock
 import com.sagestock.domain.StockRepository
 import com.sagestock.domain.StockSnapshot
 import com.sagestock.domain.WatchlistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,15 +43,12 @@ data class HomeUiState(
     val watchFilter: Market? = null,
     val topFilter: TopFilter = TopFilter.RISERS,
     val snapshots: List<StockSnapshot> = emptyList(),
-    val watchedTickers: Set<String> = emptySet(),
+    val watchedSnapshots: List<StockSnapshot> = emptyList(),
     val signals: List<Signal> = emptyList(),
     val predictions: List<Prediction> = emptyList(),
 ) {
-    private val bySnapshotTicker get() = snapshots.associateBy { it.stock.ticker }
-
     val watchlist: List<StockSnapshot>
-        get() = watchedTickers.mapNotNull { bySnapshotTicker[it] }
-            .filter { watchFilter == null || it.stock.market == watchFilter }
+        get() = watchedSnapshots.filter { watchFilter == null || it.stock.market == watchFilter }
 
     val topMovers: List<StockSnapshot>
         get() = when (topFilter) {
@@ -78,9 +80,12 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState(date = todayLabel(), krStatus = marketStatus(Market.KR), usStatus = marketStatus(Market.US)))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var watchedStocks: List<Stock> = emptyList()
+    private var rebuildJob: Job? = null
+
     init {
         watchlistRepository.observeWatchlist()
-            .onEach { list -> _uiState.update { it.copy(watchedTickers = list.map { s -> s.ticker }.toSet()) } }
+            .onEach { stocks -> watchedStocks = stocks; rebuildWatchlist() }
             .launchIn(viewModelScope)
         load()
     }
@@ -95,6 +100,34 @@ class HomeViewModel @Inject constructor(
         _uiState.update {
             it.copy(loading = false, snapshots = snapshots, signals = signals, predictions = predictions)
         }
+        rebuildWatchlist()
+    }
+
+    /**
+     * 관심종목 시세 채우기. 시장 스냅샷에 있으면 재사용(스파크라인 포함), 없으면 [StockRepository.getQuote]로
+     * 보강한다. 스냅샷에 없다고 홈에서 누락되던 버그를 막는다. watchlist/snapshots 변경 시마다 재계산.
+     */
+    private fun rebuildWatchlist() {
+        rebuildJob?.cancel()
+        rebuildJob = viewModelScope.launch {
+            val bySnapshot = _uiState.value.snapshots.associateBy { it.stock.ticker }
+            val stocks = watchedStocks
+            val result = coroutineScope {
+                stocks.map { stock -> async { bySnapshot[stock.ticker] ?: fetchSnapshot(stock) } }.awaitAll()
+            }
+            _uiState.update { it.copy(watchedSnapshots = result) }
+        }
+    }
+
+    private suspend fun fetchSnapshot(stock: Stock): StockSnapshot {
+        val quote = (stockRepository.getQuote(stock.ticker) as? Result.Success)?.data
+        return StockSnapshot(
+            stock = stock,
+            price = quote?.price ?: 0.0,
+            change = quote?.change ?: 0.0,
+            changePercent = quote?.changePercent ?: 0.0,
+            volume = quote?.volume ?: 0L,
+        )
     }
 
     private companion object {

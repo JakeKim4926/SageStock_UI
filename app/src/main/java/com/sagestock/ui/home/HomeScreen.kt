@@ -236,7 +236,10 @@ private fun PreviewHome() = SageStockTheme {
                 sampleSnapshot("005930", "삼성전자", Market.KR, 78400.0, 1.82),
                 sampleSnapshot("NVDA", "NVIDIA", Market.US, 1204.5, -0.94),
             ),
-            watchedTickers = setOf("005930", "NVDA"),
+            watchedSnapshots = listOf(
+                sampleSnapshot("005930", "삼성전자", Market.KR, 78400.0, 1.82),
+                sampleSnapshot("NVDA", "NVIDIA", Market.US, 1204.5, -0.94),
+            ),
             signals = listOf(
                 Signal("1", "247540", "에코프로비엠", SignalType.GOLDEN_CROSS, "2026.06.05", "20·60일선 상향 돌파", RiskLevel.LOW),
             ),
