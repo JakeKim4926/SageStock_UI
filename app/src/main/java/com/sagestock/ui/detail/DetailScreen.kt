@@ -531,8 +531,10 @@ private fun MainChart(candles: List<Candle>, overlays: List<List<Double>>, marke
         valueFormatter = remember(market) { CartesianValueFormatter { _, value, _ -> formatPrice(market, value) } },
     )
     val dateAxis = HorizontalAxis.rememberBottom(
+        // Vico는 라벨 폭 계산 시 범위 밖 x에서도 포맷터를 호출하며, 빈 문자열을 반환하면 예외를 던진다.
+        // 인덱스를 유효 범위로 클램프해 항상 비어있지 않은 날짜를 반환한다(candles는 비어있지 않음).
         valueFormatter = remember(candles) {
-            CartesianValueFormatter { _, value, _ -> candles.getOrNull(value.toInt())?.date.orEmpty() }
+            CartesianValueFormatter { _, value, _ -> candles[value.toInt().coerceIn(candles.indices)].date }
         },
     )
     val chart = if (overlays.isNotEmpty()) {
