@@ -24,12 +24,15 @@ import javax.inject.Inject
 /** 상세 내부 탭(와이어프레임 04). */
 enum class DetailTab(val label: String) { CHART("차트"), INDICATORS("지표"), SIGNALS("시그널"), PAPER("가상매매") }
 
-/** 차트 기간 칩. days = 표시할 마지막 캔들 수(전체는 제한 없음). */
+/**
+ * 차트 조회 범위(range) — 얼마나 거슬러 볼지. days = 표시할 일봉 수(전체는 제한 없음).
+ * 캔들 간격(일/주/월)은 [CandleUnit]이 담당한다. 분봉이 없어 1D·5D는 두지 않는다.
+ */
 enum class ChartPeriod(val label: String, val days: Int) {
-    D1("1D", 1), D5("5D", 5), M1("1M", 22), M3("3M", 66), M6("6M", 132), Y1("1Y", 264), ALL("전체", Int.MAX_VALUE)
+    M1("1개월", 22), M3("3개월", 66), M6("6개월", 132), Y1("1년", 264), ALL("전체", Int.MAX_VALUE)
 }
 
-/** 봉 단위. */
+/** 봉 간격(interval) — 캔들 하나가 며칠치냐. */
 enum class CandleUnit(val label: String, val groupSize: Int) { DAY("일봉", 1), WEEK("주봉", 5), MONTH("월봉", 22) }
 
 data class IndicatorConfig(
