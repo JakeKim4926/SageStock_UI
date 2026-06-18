@@ -9,6 +9,7 @@ import com.sagestock.domain.Result
 import com.sagestock.domain.StockRepository
 import com.sagestock.domain.WatchlistRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
@@ -60,7 +61,7 @@ class DetailViewModelTest {
     @Test
     fun `initial state is Loading`() = runTest {
         coEvery { repo.getQuote(any()) } coAnswers { kotlinx.coroutines.delay(1000); Result.Success(mockQuote) }
-        coEvery { repo.getIndicators(any()) } coAnswers { kotlinx.coroutines.delay(1000); Result.Success(mockIndicators) }
+        coEvery { repo.getIndicators(any(), any(), any()) } coAnswers { kotlinx.coroutines.delay(1000); Result.Success(mockIndicators) }
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
@@ -74,7 +75,7 @@ class DetailViewModelTest {
     @Test
     fun `successful load transitions to Success`() = runTest {
         coEvery { repo.getQuote("005930") } returns Result.Success(mockQuote)
-        coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
+        coEvery { repo.getIndicators("005930", any(), any()) } returns Result.Success(mockIndicators)
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
@@ -92,7 +93,7 @@ class DetailViewModelTest {
     @Test
     fun `quote error is exposed in state`() = runTest {
         coEvery { repo.getQuote("005930") } returns Result.Error("종목 없음")
-        coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
+        coEvery { repo.getIndicators("005930", any(), any()) } returns Result.Success(mockIndicators)
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
@@ -111,7 +112,7 @@ class DetailViewModelTest {
             Result.Error("일시 오류"),
             Result.Success(mockQuote),
         )
-        coEvery { repo.getIndicators("005930") } returns Result.Success(mockIndicators)
+        coEvery { repo.getIndicators("005930", any(), any()) } returns Result.Success(mockIndicators)
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState())
         vm.uiState.test {
@@ -133,7 +134,7 @@ class DetailViewModelTest {
     @Test
     fun `toggleEma flips showEma in config`() = runTest {
         coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
-        coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
+        coEvery { repo.getIndicators(any(), any(), any()) } returns Result.Success(mockIndicators)
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState())
         advanceUntilIdle()
@@ -146,9 +147,29 @@ class DetailViewModelTest {
     }
 
     @Test
+    fun `changing period refetches with new range then serves from cache`() = runTest {
+        coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
+        coEvery { repo.getIndicators(any(), any(), any()) } returns Result.Success(mockIndicators)
+
+        val vm = DetailViewModel(repo, watchlistRepo, savedState())
+        advanceUntilIdle()
+        // 초기 로드: 기본 M3 + DAY → 3m / 1d
+        coVerify(exactly = 1) { repo.getIndicators("005930", "1d", "3m") }
+
+        vm.setPeriod(ChartPeriod.Y1) // 새 조합 → 재조회
+        advanceUntilIdle()
+        coVerify(exactly = 1) { repo.getIndicators("005930", "1d", "1y") }
+
+        vm.setPeriod(ChartPeriod.M3) // 캐시 hit → 추가 조회 없음
+        advanceUntilIdle()
+        coVerify(exactly = 1) { repo.getIndicators("005930", "1d", "3m") }
+        assertTrue(vm.uiState.value.indicators is Result.Success)
+    }
+
+    @Test
     fun `highlightIndex is read from SavedStateHandle`() = runTest {
         coEvery { repo.getQuote(any()) } returns Result.Success(mockQuote)
-        coEvery { repo.getIndicators(any()) } returns Result.Success(mockIndicators)
+        coEvery { repo.getIndicators(any(), any(), any()) } returns Result.Success(mockIndicators)
 
         val vm = DetailViewModel(repo, watchlistRepo, savedState(index = 3))
         assertEquals(3, vm.uiState.value.highlightIndex)

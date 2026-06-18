@@ -80,7 +80,8 @@ class MockStockRepository @Inject constructor(
         }
     }
 
-    override suspend fun getIndicators(ticker: String): Result<IndicatorSet> {
+    // interval/range는 서버 집계 파라미터(api-spec). Mock은 무시하고 원본 일봉 시리즈를 그대로 반환한다.
+    override suspend fun getIndicators(ticker: String, interval: String, range: String): Result<IndicatorSet> {
         delay(200)
         return withContext(io) {
             loadIndicators(ticker)

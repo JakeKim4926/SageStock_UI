@@ -44,8 +44,8 @@ class RetrofitStockRepository @Inject constructor(
     override suspend fun getQuote(ticker: String): Result<Quote> =
         safeApiCall(io, json) { api.getQuote(ticker).toDomain() }
 
-    override suspend fun getIndicators(ticker: String): Result<IndicatorSet> =
-        safeApiCall(io, json) { api.getIndicators(ticker).toDomain() }
+    override suspend fun getIndicators(ticker: String, interval: String, range: String): Result<IndicatorSet> =
+        safeApiCall(io, json) { api.getIndicators(ticker, interval, range).toDomain() }
 
     override suspend fun getSignals(): Result<List<Signal>> =
         safeApiCall(io, json) { api.getSignals().map { it.toDomain() } }

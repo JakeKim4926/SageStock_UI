@@ -107,13 +107,17 @@ class RetrofitStockRepositoryTest {
             ),
         )
 
-        val result = repository.getIndicators("005930")
+        val result = repository.getIndicators("005930", "1w", "1y")
 
         assertTrue(result is Result.Success)
         val set = (result as Result.Success).data
         assertEquals(1, set.candles.size)
         assertEquals(73500.0, set.candles[0].close, 0.0)
         assertEquals(CrossType.GOLDEN, set.crossMarkers[0].type)
+        // interval/range가 쿼리로 붙는지 확인
+        val path = server.takeRequest().path
+        assertTrue(path!!.contains("interval=1w"))
+        assertTrue(path.contains("range=1y"))
     }
 
     @Test
@@ -155,7 +159,7 @@ class RetrofitStockRepositoryTest {
             ),
         )
 
-        val result = repository.getIndicators("005930")
+        val result = repository.getIndicators("005930", "1d", "6m")
 
         assertTrue(result is Result.Error)
         assertEquals("field required", (result as Result.Error).message)
