@@ -30,7 +30,11 @@ interface SageStockApi {
     suspend fun getQuote(@Path("ticker") ticker: String): QuoteDto
 
     @GET("v1/stocks/{ticker}/indicators")
-    suspend fun getIndicators(@Path("ticker") ticker: String): IndicatorSetDto
+    suspend fun getIndicators(
+        @Path("ticker") ticker: String,
+        @Query("interval") interval: String,
+        @Query("range") range: String,
+    ): IndicatorSetDto
 
     @GET("v1/market/snapshots")
     suspend fun getSnapshots(@Query("market") market: String? = null): List<StockSnapshotDto>

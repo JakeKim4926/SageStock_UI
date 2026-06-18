@@ -25,15 +25,15 @@ import javax.inject.Inject
 enum class DetailTab(val label: String) { CHART("차트"), INDICATORS("지표"), SIGNALS("시그널"), PAPER("가상매매") }
 
 /**
- * 차트 조회 범위(range) — 얼마나 거슬러 볼지. days = 표시할 일봉 수(전체는 제한 없음).
+ * 차트 조회 범위(range) — 얼마나 거슬러 볼지. apiValue = 백엔드 `range` 쿼리값.
  * 캔들 간격(일/주/월)은 [CandleUnit]이 담당한다. 분봉이 없어 1D·5D는 두지 않는다.
  */
-enum class ChartPeriod(val label: String, val days: Int) {
-    M1("1개월", 22), M3("3개월", 66), M6("6개월", 132), Y1("1년", 264), ALL("전체", Int.MAX_VALUE)
+enum class ChartPeriod(val label: String, val apiValue: String) {
+    M1("1개월", "1m"), M3("3개월", "3m"), M6("6개월", "6m"), Y1("1년", "1y"), ALL("전체", "max")
 }
 
-/** 봉 간격(interval) — 캔들 하나가 며칠치냐. */
-enum class CandleUnit(val label: String, val groupSize: Int) { DAY("일봉", 1), WEEK("주봉", 5), MONTH("월봉", 22) }
+/** 봉 간격(interval) — apiValue = 백엔드 `interval` 쿼리값. */
+enum class CandleUnit(val label: String, val apiValue: String) { DAY("일봉", "1d"), WEEK("주봉", "1w"), MONTH("월봉", "1mo") }
 
 data class IndicatorConfig(
     val showRsi: Boolean = true,
@@ -71,6 +71,10 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DetailUiState(ticker = ticker, highlightIndex = initialHighlight))
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
+    // (간격, 범위)별 지표 캐시 — 한 번 받은 조합은 재조회 없이 즉시 표시. 조합이 3×5=15개로 유한하고
+    // ViewModel(상세 화면) 수명에만 살아 자연 bounded.
+    private val indicatorCache = mutableMapOf<Pair<CandleUnit, ChartPeriod>, IndicatorSet>()
+
     init {
         load()
         observeWatchlist()
@@ -79,8 +83,18 @@ class DetailViewModel @Inject constructor(
     fun retry() = load()
 
     fun selectTab(tab: DetailTab) = _uiState.update { it.copy(selectedTab = tab) }
-    fun setPeriod(period: ChartPeriod) = _uiState.update { it.copy(period = period) }
-    fun setCandleUnit(unit: CandleUnit) = _uiState.update { it.copy(candleUnit = unit) }
+
+    fun setPeriod(period: ChartPeriod) {
+        if (period == _uiState.value.period) return
+        _uiState.update { it.copy(period = period) }
+        refreshIndicators()
+    }
+
+    fun setCandleUnit(unit: CandleUnit) {
+        if (unit == _uiState.value.candleUnit) return
+        _uiState.update { it.copy(candleUnit = unit) }
+        refreshIndicators()
+    }
     fun openSettings() = _uiState.update { it.copy(showSettings = true) }
     fun closeSettings() = _uiState.update { it.copy(showSettings = false) }
 
@@ -102,20 +116,40 @@ class DetailViewModel @Inject constructor(
     }
 
     private fun load() {
+        val unit = _uiState.value.candleUnit
+        val period = _uiState.value.period
         viewModelScope.launch {
             _uiState.update { it.copy(quote = Result.Loading, indicators = Result.Loading) }
             val quoteDeferred = async { repo.getQuote(ticker) }
-            val indicatorsDeferred = async { repo.getIndicators(ticker) }
+            val indicatorsDeferred = async { repo.getIndicators(ticker, unit.apiValue, period.apiValue) }
             val stockDeferred = async { (repo.search(ticker) as? Result.Success)?.data?.firstOrNull { it.ticker == ticker } }
             val signalsDeferred = async { (repo.getSignals() as? Result.Success)?.data?.filter { it.ticker == ticker } ?: emptyList() }
+            val indicators = indicatorsDeferred.await()
+            if (indicators is Result.Success) indicatorCache[unit to period] = indicators.data
             _uiState.update {
                 it.copy(
                     quote = quoteDeferred.await(),
-                    indicators = indicatorsDeferred.await(),
+                    indicators = indicators,
                     stock = stockDeferred.await(),
                     signals = signalsDeferred.await(),
                 )
             }
+        }
+    }
+
+    /** 봉/기간 변경 시 지표만 재조회. 캐시에 있으면 즉시 표시, 없으면 조회 후 캐시. */
+    private fun refreshIndicators() {
+        val unit = _uiState.value.candleUnit
+        val period = _uiState.value.period
+        indicatorCache[unit to period]?.let { cached ->
+            _uiState.update { it.copy(indicators = Result.Success(cached)) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(indicators = Result.Loading) }
+            val result = repo.getIndicators(ticker, unit.apiValue, period.apiValue)
+            if (result is Result.Success) indicatorCache[unit to period] = result.data
+            _uiState.update { it.copy(indicators = result) }
         }
     }
 

@@ -138,19 +138,20 @@ fun DetailContent(
         )
         HorizontalDivider(color = c.line)
 
-        when {
-            state.quote is Result.Loading || state.indicators is Result.Loading -> {
+        // 본문은 quote 기준으로 게이팅한다. 지표(차트)는 봉/기간 변경 시 따로 재조회되므로
+        // 차트/지표 탭 안에서 Result를 처리해 전체 화면이 스피너로 덮이지 않게 한다.
+        when (val quote = state.quote) {
+            is Result.Loading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = c.brand)
                 }
             }
-            state.quote is Result.Error -> ErrorState((state.quote as Result.Error).message, onRetry)
-            state.indicators is Result.Error -> ErrorState((state.indicators as Result.Error).message, onRetry)
-            state.quote is Result.Success && state.indicators is Result.Success -> {
+            is Result.Error -> ErrorState(quote.message, onRetry)
+            is Result.Success -> {
                 DetailBody(
-                    quote = (state.quote as Result.Success<Quote>).data,
-                    indicators = (state.indicators as Result.Success<IndicatorSet>).data,
+                    quote = quote.data,
                     state = state,
+                    onRetry = onRetry,
                     onPaperTrade = onPaperTrade,
                     onSelectTab = onSelectTab,
                     onSetPeriod = onSetPeriod,
@@ -225,8 +226,8 @@ private fun Header(
 @Composable
 private fun DetailBody(
     quote: Quote,
-    indicators: IndicatorSet,
     state: DetailUiState,
+    onRetry: () -> Unit,
     onPaperTrade: (String) -> Unit,
     onSelectTab: (DetailTab) -> Unit,
     onSetPeriod: (ChartPeriod) -> Unit,
@@ -248,14 +249,36 @@ private fun DetailBody(
         HorizontalDivider(color = c.line)
 
         when (state.selectedTab) {
-            DetailTab.CHART -> ChartTab(indicators, state, quote.market, onSetPeriod, onSetCandleUnit)
-            DetailTab.INDICATORS -> IndicatorsTab(
-                indicators, state.config, onOpenSettings,
-                onToggleRsi, onToggleEma, onToggleBollinger, onToggleStochastic, onToggleDisparity,
-            )
+            DetailTab.CHART -> IndicatorGate(state.indicators, onRetry) { indicators ->
+                ChartTab(indicators, state, quote.market, onSetPeriod, onSetCandleUnit)
+            }
+            DetailTab.INDICATORS -> IndicatorGate(state.indicators, onRetry) { indicators ->
+                IndicatorsTab(
+                    indicators, state.config, onOpenSettings,
+                    onToggleRsi, onToggleEma, onToggleBollinger, onToggleStochastic, onToggleDisparity,
+                )
+            }
             DetailTab.SIGNALS -> SignalsTab(state.signals)
             DetailTab.PAPER -> PaperTab(state.ticker, onPaperTrade)
         }
+    }
+}
+
+/** 지표 Result를 차트 영역 안에서만 처리(로딩/오류 시 본문·헤더는 유지). */
+@Composable
+private fun IndicatorGate(
+    result: Result<IndicatorSet>,
+    onRetry: () -> Unit,
+    content: @Composable (IndicatorSet) -> Unit,
+) {
+    val c = SageTheme.colors
+    when (result) {
+        is Result.Loading -> Box(
+            Modifier.fillMaxWidth().height(240.dp),
+            contentAlignment = Alignment.Center,
+        ) { CircularProgressIndicator(color = c.brand) }
+        is Result.Error -> ErrorState(result.message, onRetry, Modifier.fillMaxWidth().height(240.dp))
+        is Result.Success -> content(result.data)
     }
 }
 
@@ -313,24 +336,21 @@ private fun ChartTab(
     )
     Spacer(Modifier.height(8.dp))
 
-    // 표시 캔들 = 기간 슬라이스 후 봉 단위 집계. 오버레이는 일봉에서만(주/월 재계산은 백엔드 몫).
-    val windowed = if (state.period == ChartPeriod.ALL) indicators.candles else indicators.candles.takeLast(state.period.days)
-    val displayCandles = if (state.candleUnit == CandleUnit.DAY) windowed else windowed.chunked(state.candleUnit.groupSize).map { aggregate(it) }
-    val overlays = if (state.candleUnit != CandleUnit.DAY) emptyList() else buildList {
-        fun List<Double>.win() = if (state.period == ChartPeriod.ALL) this else takeLast(state.period.days)
+    // 서버가 interval/range로 집계·윈도잉해 보내준 시리즈를 그대로 그린다(주/월봉 오버레이도 재계산되어 옴).
+    val overlays = buildList {
         if (state.config.showEma) {
-            if (indicators.ema5.size == indicators.candles.size) add(indicators.ema5.win())
-            if (indicators.ema20.size == indicators.candles.size) add(indicators.ema20.win())
-            if (indicators.ema60.size == indicators.candles.size) add(indicators.ema60.win())
-            if (indicators.ema120.size == indicators.candles.size) add(indicators.ema120.win())
+            if (indicators.ema5.size == indicators.candles.size) add(indicators.ema5)
+            if (indicators.ema20.size == indicators.candles.size) add(indicators.ema20)
+            if (indicators.ema60.size == indicators.candles.size) add(indicators.ema60)
+            if (indicators.ema120.size == indicators.candles.size) add(indicators.ema120)
         }
         if (state.config.showBollinger) {
-            if (indicators.bollingerUpper.size == indicators.candles.size) add(indicators.bollingerUpper.win())
-            if (indicators.bollingerMid.size == indicators.candles.size) add(indicators.bollingerMid.win())
-            if (indicators.bollingerLower.size == indicators.candles.size) add(indicators.bollingerLower.win())
+            if (indicators.bollingerUpper.size == indicators.candles.size) add(indicators.bollingerUpper)
+            if (indicators.bollingerMid.size == indicators.candles.size) add(indicators.bollingerMid)
+            if (indicators.bollingerLower.size == indicators.candles.size) add(indicators.bollingerLower)
         }
     }
-    MainChart(displayCandles, overlays, market)
+    MainChart(indicators.candles, overlays, market)
     MarkersList(indicators)
 }
 
@@ -487,15 +507,6 @@ private fun PeriodChip(label: String, selected: Boolean, onClick: () -> Unit) {
         Text(label, style = SageTypography.labelSmall, color = if (selected) c.onBrand else c.textSecondary)
     }
 }
-
-private fun aggregate(chunk: List<Candle>): Candle = Candle(
-    date = chunk.last().date,
-    open = chunk.first().open,
-    high = chunk.maxOf { it.high },
-    low = chunk.minOf { it.low },
-    close = chunk.last().close,
-    volume = chunk.sumOf { it.volume },
-)
 
 @Composable
 private fun SubPanelLabel(title: String, value: String) {
@@ -686,9 +697,9 @@ private fun OhlcItem(label: String, value: Double, isKr: Boolean, isVolume: Bool
 }
 
 @Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
+private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier.fillMaxSize()) {
     val c = SageTheme.colors
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(modifier, contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(message, color = c.textSecondary, style = SageTypography.bodyMedium)
             Spacer(Modifier.height(12.dp))
