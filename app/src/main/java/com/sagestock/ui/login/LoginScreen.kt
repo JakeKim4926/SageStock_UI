@@ -77,6 +77,10 @@ private fun LoginContent(
             Text("SageStock", style = SageTypography.headlineSmall, color = c.textPrimary)
             Spacer(Modifier.height(4.dp))
             Text("로그인하여 분석을 시작하세요", style = SageTypography.bodySmall, color = c.textSecondary)
+            if (state.warmingUp) {
+                Spacer(Modifier.height(4.dp))
+                Text("서버 깨우는 중…", style = SageTypography.labelMedium, color = c.textTertiary)
+            }
         }
 
         Column(

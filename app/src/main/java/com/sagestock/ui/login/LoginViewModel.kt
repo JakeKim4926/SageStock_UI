@@ -2,6 +2,7 @@ package com.sagestock.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sagestock.data.remote.HealthApi
 import com.sagestock.domain.AuthRepository
 import com.sagestock.domain.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,15 +20,31 @@ data class LoginUiState(
     val loading: Boolean = false,
     val error: String? = null,
     val loggedIn: Boolean = false,
+    val warmingUp: Boolean = false,
 )
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val healthApi: HealthApi,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    init {
+        warmUp()
+    }
+
+    // 로그인 화면 진입 즉시 서버를 깨워, 유저가 입력하는 동안 콜드스타트(~30~50초)를 미리 녹인다.
+    // best-effort — 실패해도 로그인 동작엔 영향 없다.
+    private fun warmUp() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(warmingUp = true) }
+            runCatching { healthApi.ping() }
+            _uiState.update { it.copy(warmingUp = false) }
+        }
+    }
 
     fun setId(value: String) = _uiState.update { it.copy(id = value, error = null) }
     fun setPassword(value: String) = _uiState.update { it.copy(password = value, error = null) }
