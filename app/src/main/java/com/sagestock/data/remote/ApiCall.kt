@@ -31,8 +31,9 @@ suspend fun <T> safeApiCall(
         Result.Error(parseApiError(json, e.response()?.errorBody()?.string(), e.code()))
     } catch (e: IOException) {
         Result.Error(MSG_NETWORK)
-    } catch (e: Exception) {
-        Result.Error(e.message ?: MSG_UNKNOWN)
+    } catch (_: Exception) {
+        // 역직렬화/매핑 등 내부 예외의 원문(응답 JSON 본문 포함)이 UI로 새지 않게 일반 메시지로 막는다.
+        Result.Error(MSG_UNKNOWN)
     }
 }
 
