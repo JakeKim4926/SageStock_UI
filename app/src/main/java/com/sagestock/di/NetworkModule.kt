@@ -3,6 +3,7 @@ package com.sagestock.di
 import com.sagestock.BuildConfig
 import com.sagestock.data.remote.AuthApi
 import com.sagestock.data.remote.AuthInterceptor
+import com.sagestock.data.remote.HealthApi
 import com.sagestock.data.remote.SageStockApi
 import com.sagestock.data.remote.TokenAuthenticator
 import dagger.Module
@@ -54,6 +55,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAuthApi(@AuthRetrofit retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
+
+    // /health는 무인증이라 plain 클라이언트에 둔다(콜드스타트 중 토큰 갱신 순환 방지).
+    @Provides
+    @Singleton
+    fun provideHealthApi(@AuthRetrofit retrofit: Retrofit): HealthApi = retrofit.create(HealthApi::class.java)
 
     // --- 메인(인증 부착) 클라이언트 ---
 
