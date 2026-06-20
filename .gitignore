@@ -35,6 +35,7 @@ google-services.json
 
 # Claude
 .claude/
+.claude_android.zip
 
 # Sensitive docs (do not leak)
 docs/api-spec.md
