@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -30,7 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -182,6 +187,18 @@ private fun RecentSection(
 private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
     val c = SageTheme.colors
     val dims = SageTheme.dims
+    // TextFieldState 기반 입력. String value 오버로드는 한글(CJK) IME 조합 상태를 보존하지 못해,
+    // 조합 중인 글자를 지울 때 필드 값과 조합이 어긋나며 지운 글자가 되살아난다. TextFieldState는
+    // 조합을 내부에서 처리해 이 문제를 막는다.
+    val tfState = rememberTextFieldState(query)
+    // 사용자 입력 → ViewModel(debounce)로 전달.
+    LaunchedEffect(tfState) {
+        snapshotFlow { tfState.text.toString() }.collect { onQueryChange(it) }
+    }
+    // 최근검색 클릭·초기화 등 외부에서 바뀐 query만 필드로 되비춘다.
+    LaunchedEffect(query) {
+        if (query != tfState.text.toString()) tfState.edit { replace(0, length, query) }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -194,13 +211,12 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         Icon(Icons.Default.Search, contentDescription = "검색", tint = c.textTertiary, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
         BasicTextField(
-            value = query,
-            onValueChange = onQueryChange,
+            state = tfState,
             modifier = Modifier.weight(1f),
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = SageTypography.bodyMedium.copy(color = c.textPrimary),
-            decorationBox = { inner ->
-                if (query.isEmpty()) Text("종목명 · 티커 검색", style = SageTypography.bodyMedium, color = c.textTertiary)
+            decorator = TextFieldDecorator { inner ->
+                if (tfState.text.isEmpty()) Text("종목명 · 티커 검색", style = SageTypography.bodyMedium, color = c.textTertiary)
                 inner()
             },
         )
