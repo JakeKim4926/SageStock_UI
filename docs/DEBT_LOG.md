@@ -27,3 +27,8 @@
 - 후속: 실서버 base path 확정 → `API_BASE_URL` 교체 및 경로 정리. 백엔드 에러 바디 형태 통일 합의.
 
 ## 해결됨
+
+### [2026-06-20] 검색창에서 글자 삭제 시 일부가 복원되는 버그 — 해결
+- 위치: `ui/search/SearchScreen.kt` `SearchBar`
+- 원인: `value: String` 기반 `BasicTextField`가 한글(CJK) IME 조합 상태를 보존하지 못해, 조합 중인 글자를 지울 때 필드 값과 IME 조합이 어긋나며 지운 글자가 되살아났다. (로컬 `mutableStateOf` 미러 시도로는 미해결이었던 항목 [2026-06-18])
+- 해결: `BasicTextField(state: TextFieldState)` + `rememberTextFieldState`로 마이그레이션, `snapshotFlow`로 입력을 VM debounce에 연결, `LaunchedEffect(query)`로 외부 변경만 되비춰 피드백 루프 방지. 커밋 `a7ff888`.
